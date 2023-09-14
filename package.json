@@ -1,0 +1,70 @@
+{
+	"name": "bun-rsc",
+	"module": "index.ts",
+	"type": "module",
+	"scripts": {
+		"build": "bun build-framework.ts",
+		"start": "bun server.ts",
+		"node": "bun run build && node server-node.js"
+	},
+	"imports": {
+		"#bundler-implementation": {
+			"types": "./framework/bundler.bun.ts",
+			"bun": "./framework/bundler.bun.ts",
+			"node": "./build/node/bundler.node.js"
+		},
+		"#dynamic-import-implementation": {
+			"types": "./framework/dynamic-import.bun.ts",
+			"bun": "./framework/dynamic-import.bun.ts",
+			"node": "./build/node/dynamic-import.node.js"
+		},
+		"#react-dom-server-implementation": {
+			"types": "./framework/react-dom-server.bun.ts",
+			"bun": "./framework/react-dom-server.bun.ts",
+			"node": "./build/node/react-dom-server.node.js"
+		},
+		"#react-server-dom-client-implementation": {
+			"types": "./framework/react-server-dom-client.bun.ts",
+			"bun": "./framework/react-server-dom-client.bun.ts",
+			"node": "./build/node/react-server-dom-client.node.js"
+		},
+		"#react-server-dom-server-implementation": {
+			"types": "./framework/react-server-dom-server.bun.ts",
+			"bun": "./framework/react-server-dom-server.bun.ts",
+			"node": "./build/node/react-server-dom-server.node.js"
+		},
+		"#resolver-implementation": {
+			"types": "./framework/resolve.bun.ts",
+			"bun": "./framework/resolve.bun.ts",
+			"node": "./build/node/resolve.node.js"
+		}
+	},
+	"exports": {
+		"./bundler": {
+			"bun": "./framework/bundler.ts",
+			"node": "./build/node/bundler.js"
+		},
+		"./server": {
+			"bun": "./framework/server.ts",
+			"node": "./build/node/server.js"
+		}
+	},
+	"dependencies": {
+		"@hono/node-server": "^1.1.1",
+		"@oxidation-compiler/napi": "^0.1.0",
+		"enhanced-resolve": "^5.15.0",
+		"esbuild": "^0.19.3",
+		"hono": "^3.6.0",
+		"react": "experimental",
+		"react-dom": "experimental",
+		"react-server-dom-webpack": "experimental",
+		"tsm": "^2.3.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.1.2",
+		"@types/react": "^18.2.21",
+		"@types/react-dom": "^18.2.7",
+		"bun-types": "latest",
+		"typescript": "^5.0.0"
+	}
+}
