@@ -1,0 +1,91 @@
+{
+	"name": "framework",
+	"version": "0.0.0",
+	"type": "module",
+	"files": ["dist", "src"],
+	"scripts": {
+		"build": "bun build-framework.ts && tsc",
+		"start": "bun server.ts",
+		"node": "bun run build && node server-node.js"
+	},
+	"imports": {
+		"#bundler-implementation": {
+			"types": "./src/bundler.bun.ts",
+			"bun": "./src/bundler.bun.ts",
+			"node": "./dist/node/src/bundler.node.js"
+		},
+		"#dynamic-import-implementation": {
+			"types": "./src/dynamic-import.bun.ts",
+			"bun": "./src/dynamic-import.bun.ts",
+			"node": "./dist/node/src/dynamic-import.node.js"
+		},
+		"#react-dom-server-implementation": {
+			"types": "./src/react-dom-server.bun.ts",
+			"bun": "./src/react-dom-server.bun.ts",
+			"node": "./dist/node/src/react-dom-server.node.js"
+		},
+		"#react-server-dom-client-implementation": {
+			"types": "./src/react-server-dom-client.bun.ts",
+			"bun": "./src/react-server-dom-client.bun.ts",
+			"node": "./dist/node/src/react-server-dom-client.node.js"
+		},
+		"#react-server-dom-server-implementation": {
+			"types": "./src/react-server-dom-server.bun.ts",
+			"bun": "./src/react-server-dom-server.bun.ts",
+			"node": "./dist/node/src/react-server-dom-server.node.js"
+		},
+		"#resolver-implementation": {
+			"types": "./src/resolve.bun.ts",
+			"bun": "./src/resolve.bun.ts",
+			"node": "./dist/node/src/resolve.node.js"
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./dist/types/src/framework.d.ts",
+			"bun": "./src/framework.ts",
+			"node": "./dist/node/src/framework.js",
+			"import": "./dist/node/src/framework.js"
+		},
+		"./client": {
+			"types": "./dist/types/src/framework.client.d.ts",
+			"bun": "./src/framework.client.ts",
+			"node": "./dist/node/src/framework.client.js",
+			"import": "./dist/node/src/framework.client.js"
+		},
+		"./bundler": {
+			"types": "./dist/types/src/bundler.d.ts",
+			"bun": "./src/bundler.ts",
+			"node": "./dist/node/src/bundler.js",
+			"import": "./dist/node/src/bundler.js"
+		},
+		"./server": {
+			"types": "./dist/types/src/server.d.ts",
+			"bun": "./src/server.ts",
+			"node": "./dist/node/src/server.js",
+			"import": "./dist/node/src/server.js"
+		},
+		"./browser/entry.ts": "./framework/src/browser/entry.ts",
+		"./server/entry.ts": "./framework/src/server/entry.ts",
+		"./ssr/entry.ts": "./framework/src/ssr/entry.ts",
+		"./package.json": "./package.json"
+	},
+	"dependencies": {
+		"@hono/node-server": "^1.1.1",
+		"@oxidation-compiler/napi": "^0.1.0",
+		"enhanced-resolve": "^5.15.0",
+		"esbuild": "^0.19.3",
+		"hono": "^3.6.0",
+		"react": "experimental",
+		"react-dom": "experimental",
+		"react-server-dom-webpack": "experimental",
+		"tsm": "^2.3.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.1.2",
+		"@types/react": "^18.2.21",
+		"@types/react-dom": "^18.2.7",
+		"bun-types": "^1.0.1",
+		"typescript": "^5.2.2"
+	}
+}

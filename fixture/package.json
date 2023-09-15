@@ -1,0 +1,28 @@
+{
+	"name": "fixture",
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"build": "node build.js",
+		"build-bun": "bun build.js",
+		"dev": "node dev.js",
+		"dev-bun": "bun dev.js",
+		"start-bun": "bun prod.js",
+		"start": "node prod.js"
+	},
+	"dependencies": {
+		"@hono/node-server": "^1.1.1",
+		"@vercel/og": "^0.5.13",
+		"framework": "workspace:*",
+		"hono": "^3.6.0",
+		"react": "experimental",
+		"react-dom": "experimental",
+		"react-server-dom-webpack": "experimental"
+	},
+	"devDependencies": {
+		"@types/react": "^18.2.21",
+		"@types/react-dom": "^18.2.7",
+		"bun-types": "latest",
+		"typescript": "^5.2.2"
+	}
+}
