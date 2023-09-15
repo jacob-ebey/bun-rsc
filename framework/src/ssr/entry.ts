@@ -14,6 +14,7 @@ async function RecursiveRSCRenderer({
 	const result = await reader.read();
 	const chunk = result.value;
 	const chunkString = decoder.decode(chunk, { stream: true });
+	await new Promise((resolve) => setTimeout(resolve, 0));
 	const script = React.createElement("script", {
 		// biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
 		dangerouslySetInnerHTML: {
