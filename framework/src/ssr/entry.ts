@@ -19,7 +19,7 @@ async function RecursiveRSCRenderer({
 		// biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
 		dangerouslySetInnerHTML: {
 			// TODO: encode the chunk
-			__html: ` __RSC_CHUNK__(${JSON.stringify(chunkString)});`,
+			__html: ` __RSC_CHUNK__(${sanitize(JSON.stringify(chunkString))});`,
 		},
 	});
 	if (result.done) {
@@ -45,6 +45,22 @@ async function RecursiveRSCRenderer({
 			React.createElement(RecursiveRSCRenderer, { decoder, reader }),
 		),
 	);
+}
+
+// Taken from https://github.com/cyco130/vite-rsc/blob/2e3d0ad9915e57c4b2eaa3ea24b46c1b477a4cce/packages/fully-react/src/server/htmlescape.ts#L25C1-L38C2
+const TERMINATORS_LOOKUP: Record<string, string> = {
+	"\u2028": "\\u2028",
+	"\u2029": "\\u2029",
+};
+
+const TERMINATORS_REGEX = /[\u2028\u2029]/g;
+
+function sanitizer(match: string | number) {
+	return TERMINATORS_LOOKUP[match];
+}
+
+export function sanitize(str: string) {
+	return str.replace(TERMINATORS_REGEX, sanitizer);
 }
 
 export async function fetch(
