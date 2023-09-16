@@ -64,7 +64,7 @@ async function cacheOrFetch(request: Request, invalidate?: string) {
 			statusText: cloned.statusText,
 		});
 		toCache.headers.set("Cache-Control", "public, max-age=31536000");
-		await cache.put(cacheKey, toCache);
+		cache.put(cacheKey, toCache).catch(console.error);
 	}
 
 	return response;
