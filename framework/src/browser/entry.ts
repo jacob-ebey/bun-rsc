@@ -6,7 +6,7 @@ import * as ReactDOM from "react-dom/client";
 import * as ReactServerDOM from "react-server-dom-webpack/client.browser";
 
 import { installEventListeners } from "./event-listeners.ts";
-import type { RSCPayload, ServerCallType } from "../router.ts";
+import type { Location, RSCPayload, ServerCallType } from "../router.ts";
 
 declare global {
 	// biome-ignore lint/style/noVar: <explanation>
@@ -32,6 +32,7 @@ declare global {
 			listener: (
 				event: CustomEvent<{
 					args?: unknown[];
+					from: Location;
 					url?: URL;
 					response: React.Usable<RSCPayload>;
 				}>,
@@ -42,6 +43,7 @@ declare global {
 			listener: (
 				event: CustomEvent<{
 					args?: unknown[];
+					from: Location;
 					url?: URL;
 					response: React.Usable<RSCPayload>;
 				}>,
@@ -242,8 +244,13 @@ window.callServer = async function callServer(
 			} = { controller };
 			pendingNavigations.add(pending);
 
+			const from: Location = {
+				pathname: window.location.pathname,
+				search: window.location.search,
+			};
+
 			const event = new CustomEvent("rsctransition", {
-				detail: { url, response },
+				detail: { from, url, response },
 			});
 			if (pushState) {
 				history.pushState(null, "", url.pathname + url.search);
@@ -291,8 +298,13 @@ window.callServer = async function callServer(
 				rscPayload?: RSCPayload;
 			} = {};
 			pendingNavigations.add(pending);
+
+			const from: Location = {
+				pathname: window.location.pathname,
+				search: window.location.search,
+			};
 			const event = new CustomEvent("rsctransition", {
-				detail: { args, url, response },
+				detail: { args, from, url, response },
 			});
 			window.dispatchEvent(event);
 
