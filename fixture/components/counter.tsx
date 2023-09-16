@@ -19,25 +19,26 @@ export function Counter({
 	const location = useLocation();
 	const navigation = useNavigation();
 
-	const [optimisticCount, countAction] = React.experimental_useOptimistic<
-		number,
-		"decrement" | "increment" | string | null | undefined
-	>(count, (previousCount, action) => {
-		switch (action) {
-			case "decrement":
-				return previousCount - 1;
-			case "increment":
-				return previousCount + 1;
-			default:
-				return previousCount;
-		}
-	});
+	const [optimisticCount, updateOptimisticCount] =
+		React.experimental_useOptimistic<
+			number,
+			"decrement" | "increment" | string | null | undefined
+		>(count, (previousCount, action) => {
+			switch (action) {
+				case "decrement":
+					return previousCount - 1;
+				case "increment":
+					return previousCount + 1;
+				default:
+					return previousCount;
+			}
+		});
 
 	return (
 		<form
 			action={async (formData) => {
 				const intent = formData.has("decrement") ? "decrement" : "increment";
-				countAction(intent);
+				updateOptimisticCount(intent);
 				await incrementOrDecrement(formData);
 				await invalidate("*");
 			}}
