@@ -14,7 +14,6 @@ export function installEventListeners() {
 		if (url.origin !== location.origin) {
 			return;
 		}
-		console.log(event);
 		const fromURL = location.pathname;
 
 		event.intercept({

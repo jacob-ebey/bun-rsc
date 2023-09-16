@@ -14,7 +14,6 @@ export function renderToReadableStream(
 		write(chunk, encoding, callback) {
 			this.push(chunk, encoding);
 			callback();
-			console.log("HERE");
 		},
 	});
 	pipe(passthrough);

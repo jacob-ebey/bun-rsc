@@ -12,58 +12,57 @@
 		"#bundler-implementation": {
 			"types": "./src/bundler.bun.ts",
 			"bun": "./src/bundler.bun.ts",
-			"node": "./dist/node/src/bundler.node.js"
+			"node": "./dist/node/bundler.node.js"
 		},
 		"#dynamic-import-implementation": {
 			"types": "./src/dynamic-import.bun.ts",
 			"bun": "./src/dynamic-import.bun.ts",
-			"node": "./dist/node/src/dynamic-import.node.js"
+			"node": "./dist/node/dynamic-import.node.js"
 		},
 		"#react-dom-server-implementation": {
 			"types": "./src/react-dom-server.bun.ts",
 			"bun": "./src/react-dom-server.bun.ts",
-			"node": "./dist/node/src/react-dom-server.node.js"
+			"node": "./dist/node/react-dom-server.node.js"
 		},
 		"#react-server-dom-client-implementation": {
 			"types": "./src/react-server-dom-client.bun.ts",
 			"bun": "./src/react-server-dom-client.bun.ts",
-			"node": "./dist/node/src/react-server-dom-client.node.js"
+			"node": "./dist/node/react-server-dom-client.node.js"
 		},
 		"#react-server-dom-server-implementation": {
 			"types": "./src/react-server-dom-server.bun.ts",
 			"bun": "./src/react-server-dom-server.bun.ts",
-			"node": "./dist/node/src/react-server-dom-server.node.js"
+			"node": "./dist/node/react-server-dom-server.node.js"
 		},
 		"#resolver-implementation": {
 			"types": "./src/resolve.bun.ts",
 			"bun": "./src/resolve.bun.ts",
-			"node": "./dist/node/src/resolve.node.js"
+			"node": "./dist/node/resolve.node.js"
 		}
 	},
 	"exports": {
 		".": {
 			"types": "./dist/types/src/framework.d.ts",
-			"bun": "./src/framework.ts",
-			"node": "./dist/node/src/framework.js",
-			"import": "./dist/node/src/framework.js"
+			"default": "./dist/node/framework.js"
 		},
 		"./client": {
 			"types": "./dist/types/src/framework.client.d.ts",
-			"bun": "./src/framework.client.ts",
-			"node": "./dist/node/src/framework.client.js",
-			"import": "./dist/node/src/framework.client.js"
+			"default": "./src/framework.client.ts"
 		},
 		"./bundler": {
 			"types": "./dist/types/src/bundler.d.ts",
 			"bun": "./src/bundler.ts",
-			"node": "./dist/node/src/bundler.js",
-			"import": "./dist/node/src/bundler.js"
+			"node": "./dist/node/bundler.js",
+			"import": "./dist/node/bundler.js"
+		},
+		"./router": {
+			"types": "./dist/types/src/router.d.ts",
+			"default": "./src/router.ts"
 		},
 		"./server": {
 			"types": "./dist/types/src/server.d.ts",
 			"bun": "./src/server.ts",
-			"node": "./dist/node/src/server.js",
-			"import": "./dist/node/src/server.js"
+			"node": "./dist/node/server.js"
 		},
 		"./browser/entry.ts": "./framework/src/browser/entry.ts",
 		"./server/entry.ts": "./framework/src/server/entry.ts",

@@ -5,8 +5,6 @@ const buildResult = await Bun.build({
 		"./src/bundler.ts",
 		"./src/bundler.node.ts",
 		"./src/dynamic-import.node.ts",
-		"./src/framework.ts",
-		"./src/framework.client.ts",
 		"./src/react-dom-server.node.ts",
 		"./src/react-server-dom-client.node.ts",
 		"./src/react-server-dom-server.node.ts",
@@ -16,7 +14,13 @@ const buildResult = await Bun.build({
 	format: "esm",
 	target: "node",
 	splitting: true,
-	external: [...Object.keys(pkg.dependencies), ...Object.keys(pkg.imports)],
+	external: [
+		...Object.keys(pkg.dependencies),
+		...Object.keys(pkg.imports),
+		"framework",
+		"framework/router",
+		"framework/client",
+	],
 	outdir: "./dist/node",
 });
 

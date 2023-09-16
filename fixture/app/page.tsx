@@ -1,13 +1,18 @@
+import { incrementOrDecrement } from "../actions/counter.ts";
 import { sayHello } from "../actions/say-hello.tsx";
 import { Counter } from "../components/counter.tsx";
 import { PendingLabel } from "../components/form.tsx";
+import { counter } from "../models/counter.ts";
 
 export default async function Home() {
-	await new Promise((resolve) => setTimeout(resolve, 1000));
+	const [{ count }] = await Promise.all([
+		counter(),
+		new Promise((resolve) => setTimeout(resolve, 1000)),
+	]);
 	return (
 		<main>
 			<h1>Home</h1>
-			<Counter />
+			<Counter count={count} incrementOrDecrement={incrementOrDecrement} />
 
 			<form action={sayHello}>
 				<input type="hidden" name="name" value="Hidden" />

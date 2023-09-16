@@ -1,6 +1,10 @@
 import { type ReactNode } from "react";
 
-export default function Document({ children }: { children: ReactNode }) {
+import { incrementOrDecrement } from "../actions/counter.ts";
+import { Counter } from "../components/counter.tsx";
+import { counter } from "../models/counter.ts";
+
+export default async function Document({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en">
 			<head>
@@ -16,6 +20,10 @@ export default function Document({ children }: { children: ReactNode }) {
 						<a href="/about">About</a>
 					</li>
 				</ul>
+				<Counter
+					count={(await counter()).count}
+					incrementOrDecrement={incrementOrDecrement}
+				/>
 				{children}
 				{Array(100)
 					.fill("")

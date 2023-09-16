@@ -1,8 +1,7 @@
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// import { type BundleInfo } from "./bundler.ts";
-import { type Routing } from "./router.ts";
+import type { Routing } from "framework/router";
 import type * as ServerEntry from "./server/entry.ts";
 import type * as SSREntry from "./ssr/entry.ts";
 
@@ -82,10 +81,12 @@ export function createHandler(importURL: string, bundleInfo: BundleInfo) {
 		let response: Response;
 
 		if (!rscResponse.headers.get("Content-Type")?.match(/text\/x-component/)) {
-			return rscResponse;
-		} else if (request.headers.has("RSC")) {
 			response = rscResponse;
 		} else if (request.headers.has("RSC-Action")) {
+			response = rscResponse;
+		} else if (request.headers.has("RSC-Form")) {
+			response = rscResponse;
+		} else if (request.headers.has("RSC-Navigation")) {
 			response = rscResponse;
 		} else {
 			const ssrEntry = (await dynamicImport.dynamicImport(
@@ -97,9 +98,10 @@ export function createHandler(importURL: string, bundleInfo: BundleInfo) {
 			});
 		}
 
-		response.headers.append("Vary", "RSC");
 		response.headers.append("Vary", "Accept");
-		response.headers.append("Vary", "Accept-Language");
+		response.headers.append("Vary", "RSC-Action");
+		response.headers.append("Vary", "RSC-Form");
+		response.headers.append("Vary", "RSC-Navigation");
 		return response;
 	};
 }

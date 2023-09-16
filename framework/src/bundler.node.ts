@@ -71,6 +71,7 @@ export async function bundle({
 						const serverReference = `{ $$typeof: { value: Symbol.for("react.server.reference") }, $$id: { value:${exportId} } }`;
 
 						let toExport = `function ${name}(...args) {`;
+						toExport += "console.log({t:this});";
 						toExport += `return window.callServer(${exportId}, args, "action");`;
 						toExport += "}\n";
 						toExport += `Object.defineProperties(${name}, ${serverReference})`;

@@ -3,8 +3,13 @@ import * as React from "react";
 // @ts-ignore
 import * as ReactDOMServer from "#react-server-dom-server-implementation";
 
-import { type Routing, createRSCPayload, match } from "../router.ts";
-import { ClientRouter } from "../router.client.ts";
+import {
+	type Location,
+	type Routing,
+	createRSCPayload,
+	match,
+} from "../router.ts";
+import { ClientRouter } from "framework/client";
 
 const globalObj = typeof window !== "undefined" ? window : global;
 
@@ -60,6 +65,7 @@ export async function fetch(
 		return apiRouteHandler(request);
 	}
 
+	// Manual Action calls
 	if (request.method === "POST" && request.headers.has("RSC-Action")) {
 		const actionId = request.headers.get("RSC-Action");
 
@@ -86,7 +92,6 @@ export async function fetch(
 			: await ReactDOMServer.decodeReply(await request.formData());
 
 		if (!Array.isArray(decoded)) {
-			console.log({ decoded });
 			throw new Error("Failed to decode request body");
 		}
 
@@ -107,7 +112,42 @@ export async function fetch(
 				RSC: "1",
 			},
 		});
-	} else if (
+	}
+	// Form Action calls
+	else if (request.method === "POST" && request.headers.has("RSC-Form")) {
+		const actionId = request.headers.get("RSC-Form");
+
+		const manifestEntry = actionId && clientManifest[actionId];
+		if (!manifestEntry) {
+			return notFound();
+		}
+
+		await Promise.all(
+			manifestEntry.chunks.map(globalObj.__webpack_chunk_load__),
+		);
+
+		const actionModule = globalObj.__webpack_require__(manifestEntry.id);
+		const actionFunction = (actionModule as any)?.[manifestEntry.name];
+
+		if (!actionFunction || typeof actionFunction !== "function") {
+			return notFound();
+		}
+
+		const decoded = request.headers
+			.get("Content-Type")
+			?.match(/application\/json/)
+			? await request.json()
+			: await ReactDOMServer.decodeReply(await request.formData());
+
+		if (!Array.isArray(decoded)) {
+			throw new Error("Failed to decode request body");
+		}
+
+		// TODO: Store action for surfacing in render cycle
+		await actionFunction(...decoded);
+	}
+	// NO-JS forms
+	else if (
 		request.method === "POST" &&
 		(request.headers.get("Content-Type")?.match(/multipart\/form-data/) ||
 			request.headers
@@ -145,33 +185,42 @@ export async function fetch(
 			return notFound();
 		}
 
+		// TODO: Store action for surfacing in render cycle
 		await actionFunction(actionFormData);
 	}
 
 	const [routingMatch, found] = matchedRouting;
+	const location: Location = { pathname: url.pathname, search: url.search };
 
-	const rscPayload = await createRSCPayload(routingMatch, found);
+	const rscPayload = await createRSCPayload(routingMatch, found, location);
 
-	const rscStream = ReactDOMServer.renderToReadableStream(
-		React.createElement(
-			React.StrictMode,
-			{},
-			React.createElement(ClientRouter, {
-				rscPayload,
-			}),
-		),
-		clientManifest,
-		{
-			onError: console.error,
-			signal: request.signal,
-		},
-	);
+	const rscStream =
+		request.headers.has("RSC-Form") || request.headers.has("RSC-Navigation")
+			? ReactDOMServer.renderToReadableStream(rscPayload, clientManifest, {
+					onError: console.error,
+					signal: request.signal,
+			  })
+			: ReactDOMServer.renderToReadableStream(
+					React.createElement(
+						React.StrictMode,
+						{},
+						React.createElement(ClientRouter, {
+							rscPayload,
+						}),
+					),
+					clientManifest,
+					{
+						onError: console.error,
+						signal: request.signal,
+					},
+			  );
 
-	return new Response(rscStream, {
-		headers: {
-			"Content-Type": "text/x-component",
-			"Transfer-Encoding": "chunked",
-			RSC: "1",
-		},
-	});
+	const headers = new Headers();
+	headers.append("Content-Type", "text/x-component");
+	headers.append("Transfer-Encoding", "chunked");
+	headers.append("Vary", "RSC-Action");
+	headers.append("Vary", "RSC-Form");
+	headers.append("Vary", "RSC-Navigation");
+
+	return new Response(rscStream, { headers });
 }

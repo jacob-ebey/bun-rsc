@@ -1,52 +1,68 @@
+/// <reference lib="dom" />
+
 "use client";
 
 import * as React from "react";
 
-import { log } from "../actions/log.tsx";
-import { sayHello } from "../actions/say-hello.tsx";
+import { useInvalidate, useLocation, useNavigation } from "framework/client";
+
 import { PendingLabel } from "./form.tsx";
 
-export function Counter() {
-	const abortControllerRef = React.useRef<AbortController>();
-	const [logged, setLogged] = React.useState<Element>(false);
-	const [count, setCount] = React.useState(0);
-	const [pendingCount, setPendingCount] = React.experimental_useOptimistic<
+export function Counter({
+	count,
+	incrementOrDecrement,
+}: {
+	count: number;
+	incrementOrDecrement: (formData: FormData) => Promise<void>;
+}) {
+	const invalidate = useInvalidate();
+	const location = useLocation();
+	const navigation = useNavigation();
+
+	const [optimisticCount, countAction] = React.experimental_useOptimistic<
 		number,
-		number
-	>(count, (_, newCount) => newCount);
+		"decrement" | "increment" | string | null | undefined
+	>(count, (previousCount, action) => {
+		switch (action) {
+			case "decrement":
+				return previousCount - 1;
+			case "increment":
+				return previousCount + 1;
+			default:
+				return previousCount;
+		}
+	});
 
 	return (
 		<form
-			action={async () => {
-				if (abortControllerRef.current) {
-					abortControllerRef.current.abort();
-				}
-				const abortController = new AbortController();
-				abortControllerRef.current = abortController;
-				const signal = abortController.signal;
-
-				const pending = pendingCount + 1;
-				setLogged(false);
-				setPendingCount(pending);
-				setCount((current) => {
-					const newCount = current + 1;
-					return newCount;
-				});
-				const formData = new FormData();
-				formData.set("name", `manual server action ${String(pending)}`);
-				const logged = await sayHello(formData);
-				if (!signal.aborted) {
-					setLogged(logged);
-				}
+			action={async (formData) => {
+				const intent = formData.has("decrement") ? "decrement" : "increment";
+				countAction(intent);
+				await incrementOrDecrement(formData);
+				await invalidate("*");
 			}}
 		>
-			<p>Count: {pendingCount}</p>
-			<button type="submit">Increment</button>
+			<p>
+				Count: {optimisticCount}{" "}
+				<button type="submit" name="decrement">
+					-
+				</button>
+				<button type="submit" name="increment">
+					+
+				</button>
+			</p>
 
 			<p>
 				<PendingLabel pending="Syncing with server...">Idle</PendingLabel>
 			</p>
-			{logged ? logged : <p>Not logged</p>}
+			<div style={{ display: "flex" }}>
+				<pre style={{ flex: 1 }}>
+					<code>{JSON.stringify(location || null, null, 2)}</code>
+				</pre>
+				<pre style={{ flex: 1 }}>
+					<code>{JSON.stringify(navigation || null, null, 2)}</code>
+				</pre>
+			</div>
 		</form>
 	);
 }

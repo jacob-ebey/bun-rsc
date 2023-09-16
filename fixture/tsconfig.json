@@ -3,6 +3,7 @@
 		"actions",
 		"app",
 		"components",
+		"models",
 		"build.js",
 		"server-node.js",
 		"server.ts"

@@ -28,12 +28,22 @@ export interface RSCPayload {
 	actionId?: string;
 	found: boolean;
 	match: ClientRouting;
+	location: Location;
 	routes: Record<string, React.ReactNode>;
+}
+
+export interface Location {
+	pathname: string;
+	search: string;
 }
 
 export type ServerCallType = "form" | "action" | "navigation";
 
-export async function createRSCPayload(routingMatch: Routing, found: boolean) {
+export async function createRSCPayload(
+	routingMatch: Routing,
+	found: boolean,
+	location: Location,
+): Promise<RSCPayload> {
 	const routes: Record<string, React.ReactNode> = {};
 
 	async function createRSCPayloadRecursive(
@@ -117,6 +127,7 @@ export async function createRSCPayload(routingMatch: Routing, found: boolean) {
 		found,
 		match: clientRouting,
 		routes,
+		location,
 		actionId: undefined,
 	};
 }

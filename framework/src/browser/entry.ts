@@ -6,7 +6,7 @@ import * as ReactDOM from "react-dom/client";
 import * as ReactServerDOM from "react-server-dom-webpack/client.browser";
 
 import { installEventListeners } from "./event-listeners.ts";
-import { type ServerCallType } from "../router.ts";
+import type { RSCPayload, ServerCallType } from "../router.ts";
 
 declare global {
 	// biome-ignore lint/style/noVar: <explanation>
@@ -25,6 +25,37 @@ declare global {
 	) => Promise<void>;
 	// biome-ignore lint/style/noVar: <explanation>
 	var invalidateCache: (invalidate: string) => Promise<void>;
+
+	interface Window {
+		addEventListener(
+			type: "rsctransition",
+			listener: (
+				event: CustomEvent<{
+					args?: unknown[];
+					url?: URL;
+					response: React.Usable<RSCPayload>;
+				}>,
+			) => void,
+		): void;
+		removeEventListener(
+			type: "rsctransition",
+			listener: (
+				event: CustomEvent<{
+					args?: unknown[];
+					url?: URL;
+					response: React.Usable<RSCPayload>;
+				}>,
+			) => void,
+		): void;
+		addEventListener(
+			on: "rsctransitionend",
+			callback: (event: CustomEvent<RSCPayload>) => void,
+		): void;
+		removeEventListener(
+			on: "rsctransitionend",
+			callback: (event: CustomEvent<RSCPayload>) => void,
+		): void;
+	}
 }
 
 const responseCache = (async () => {
@@ -43,31 +74,32 @@ window.invalidateCache = async function invalidateCache(invalidate: string) {
 };
 
 async function cacheOrFetch(request: Request, invalidate?: string) {
-	const cache = await responseCache;
-	let cacheKey: Request | undefined;
-	if (request.method === "GET") {
-		const cached = await cache.match(request.clone());
-		if (cached) return cached;
-		cacheKey = request.clone();
-	}
+	return fetch(request);
+	// const cache = await responseCache;
+	// let cacheKey: Request | undefined;
+	// if (request.method === "GET") {
+	// 	const cached = await cache.match(request.clone());
+	// 	if (cached) return cached;
+	// 	cacheKey = request.clone();
+	// }
 
-	if (invalidate) {
-		await invalidateCache(invalidate);
-	}
-	const response = await fetch(request);
+	// if (invalidate) {
+	// 	await invalidateCache(invalidate);
+	// }
+	// const response = await fetch(request);
 
-	if (cacheKey) {
-		const cloned = response.clone();
-		const toCache = new Response(cloned.body, {
-			headers: cloned.headers,
-			status: cloned.status,
-			statusText: cloned.statusText,
-		});
-		toCache.headers.set("Cache-Control", "public, max-age=31536000");
-		cache.put(cacheKey, toCache).catch(console.error);
-	}
+	// if (cacheKey) {
+	// 	const cloned = response.clone();
+	// 	const toCache = new Response(cloned.body, {
+	// 		headers: cloned.headers,
+	// 		status: cloned.status,
+	// 		statusText: cloned.statusText,
+	// 	});
+	// 	toCache.headers.set("Cache-Control", "public, max-age=31536000");
+	// 	cache.put(cacheKey, toCache).catch(console.error);
+	// }
 
-	return response;
+	// return response;
 }
 
 window.__webpack_chunk_load__ = async (chunkId) => {
@@ -84,16 +116,57 @@ window.__webpack_require__ = (chunkId) => {
 };
 
 let root: ReactDOM.Root;
+const pendingNavigations = new Set<{
+	controller?: AbortController;
+	rscPayload?: RSCPayload;
+}>();
+
+function clearPendingNavigationsFor(rscPayload: RSCPayload) {
+	const pendingNavigationsArray = Array.from(pendingNavigations);
+	const index = pendingNavigationsArray.findIndex(
+		(pending) => pending.rscPayload === rscPayload,
+	);
+
+	if (index === -1) {
+		return;
+	}
+
+	console.log("clearing", index);
+	for (let i = 0; i < index; i++) {
+		const pending = pendingNavigationsArray[i];
+		pending.controller?.abort();
+		pendingNavigations.delete(pending);
+	}
+}
+
+window.addEventListener("rsctransitionend", (event) => {
+	const pendingNavigationsArray = Array.from(pendingNavigations);
+	const index = pendingNavigationsArray.findIndex(
+		(pending) => pending.rscPayload === event.detail,
+	);
+
+	if (index === -1) {
+		return;
+	}
+
+	for (let i = 0; i < index; i++) {
+		const pending = pendingNavigationsArray[i];
+		pending.controller?.abort();
+		pendingNavigations.delete(pending);
+	}
+	pendingNavigations.delete(pendingNavigationsArray[index]);
+});
+
 window.callServer = async function callServer(
 	id: string,
 	args: unknown[],
-	serverCallType: ServerCallType = "form",
+	serverCallType?: ServerCallType,
 ) {
 	if (!root) {
 		throw new Error("Can't invoke server actions before hydrating");
 	}
 
-	let callType: ServerCallType = "form";
+	let callType: ServerCallType | undefined;
 	switch (serverCallType) {
 		case "action":
 		case "navigation":
@@ -102,8 +175,7 @@ window.callServer = async function callServer(
 	}
 
 	switch (callType) {
-		case "action":
-		case "form": {
+		case "action": {
 			const body = await ReactServerDOM.encodeReply(args);
 
 			if (!body) {
@@ -112,18 +184,10 @@ window.callServer = async function callServer(
 
 			const headers: Record<string, string> = {
 				Accept: "text/x-component",
+				"RSC-Action": id,
 			};
 
-			switch (callType) {
-				case "action":
-					headers["RSC-Action"] = id;
-					break;
-				default:
-					headers.RSC = "1";
-					break;
-			}
-
-			if (!(body instanceof FormData)) {
+			if (typeof body === "string") {
 				headers["Content-Type"] = "application/json";
 			}
 
@@ -142,14 +206,7 @@ window.callServer = async function callServer(
 				},
 			);
 
-			if (callType === "action") {
-				return await response;
-			}
-
-			React.startTransition(() => {
-				root.render(response);
-			});
-			break;
+			return await response;
 		}
 		case "navigation": {
 			const url = new URL(id);
@@ -160,15 +217,18 @@ window.callServer = async function callServer(
 			if (typeof fromURL !== "string") {
 				throw new Error("Expected fromURL to be a string");
 			}
+
+			const controller = new AbortController();
 			const response = ReactServerDOM.createFromFetch(
 				cacheOrFetch(
 					new Request(url.pathname + url.search, {
 						method: "GET",
 						headers: {
 							Accept: "text/x-component",
-							RSC: fromURL || "1",
+							"RSC-Navigation": fromURL || "1",
 						},
 						mode: "same-origin",
+						signal: controller.signal,
 					}),
 				),
 				{
@@ -176,13 +236,69 @@ window.callServer = async function callServer(
 				},
 			);
 
-			React.startTransition(() => {
-				root.render(response);
-				if (pushState) {
-					history.pushState(null, "", url.pathname + url.search);
-				}
+			const pending: {
+				controller: AbortController;
+				rscPayload?: RSCPayload;
+			} = { controller };
+			pendingNavigations.add(pending);
+
+			const event = new CustomEvent("rsctransition", {
+				detail: { url, response },
 			});
-			// await response;
+			if (pushState) {
+				history.pushState(null, "", url.pathname + url.search);
+			}
+			window.dispatchEvent(event);
+
+			const rscResponse = await response;
+			pending.rscPayload = rscResponse;
+			clearPendingNavigationsFor(rscResponse);
+			break;
+		}
+		default: {
+			const body = await ReactServerDOM.encodeReply(args);
+
+			if (!body) {
+				throw new Error("Failed to encode request body");
+			}
+
+			const headers: Record<string, string> = {
+				Accept: "text/x-component",
+				"RSC-Form": id,
+			};
+
+			if (typeof body === "string") {
+				headers["Content-Type"] = "application/json";
+			}
+
+			const url = new URL(window.location.pathname, window.location.origin);
+			const controller = new AbortController();
+			const response = ReactServerDOM.createFromFetch(
+				cacheOrFetch(
+					new Request(url.pathname + url.search, {
+						body,
+						method: "POST",
+						headers,
+						mode: "same-origin",
+						signal: controller.signal,
+					}),
+				),
+				{
+					callServer,
+				},
+			);
+			const pending: {
+				rscPayload?: RSCPayload;
+			} = {};
+			pendingNavigations.add(pending);
+			const event = new CustomEvent("rsctransition", {
+				detail: { args, url, response },
+			});
+			window.dispatchEvent(event);
+
+			const rscResponse = await response;
+			pending.rscPayload = rscResponse;
+			clearPendingNavigationsFor(rscResponse);
 			break;
 		}
 	}

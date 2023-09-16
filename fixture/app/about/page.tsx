@@ -1,7 +1,17 @@
-export default function About() {
+import { incrementOrDecrement } from "../../actions/counter.ts";
+import { Counter } from "../../components/counter.tsx";
+import { counter } from "../../models/counter.ts";
+
+export default async function About() {
+	const [{ count }] = await Promise.all([
+		counter(),
+		new Promise((resolve) => setTimeout(resolve, 1000)),
+	]);
 	return (
 		<main>
 			<h1>About</h1>
+
+			<Counter count={count} incrementOrDecrement={incrementOrDecrement} />
 
 			<p>This is using React Server Components!</p>
 			<p>
