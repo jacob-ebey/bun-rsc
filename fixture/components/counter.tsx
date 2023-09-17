@@ -4,8 +4,6 @@
 
 import * as React from "react";
 
-import { useInvalidate, useLocation, useNavigation } from "framework/client";
-
 import { PendingLabel } from "./form.tsx";
 
 export function Counter({
@@ -15,10 +13,6 @@ export function Counter({
 	count: number;
 	incrementOrDecrement: (formData: FormData) => Promise<void>;
 }) {
-	const invalidate = useInvalidate();
-	const location = useLocation();
-	const navigation = useNavigation();
-
 	const [optimisticCount, updateOptimisticCount] =
 		React.experimental_useOptimistic<
 			number,
@@ -40,7 +34,6 @@ export function Counter({
 				const intent = formData.has("decrement") ? "decrement" : "increment";
 				updateOptimisticCount(intent);
 				await incrementOrDecrement(formData);
-				await invalidate("*");
 			}}
 		>
 			<p>
@@ -56,14 +49,6 @@ export function Counter({
 			<p>
 				<PendingLabel pending="Syncing with server...">Idle</PendingLabel>
 			</p>
-			<div style={{ display: "flex" }}>
-				<pre style={{ flex: 1 }}>
-					<code>{JSON.stringify(location || null, null, 2)}</code>
-				</pre>
-				<pre style={{ flex: 1 }}>
-					<code>{JSON.stringify(navigation || null, null, 2)}</code>
-				</pre>
-			</div>
 		</form>
 	);
 }

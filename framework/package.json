@@ -52,8 +52,7 @@
 		"./bundler": {
 			"types": "./dist/types/src/bundler.d.ts",
 			"bun": "./src/bundler.ts",
-			"node": "./dist/node/bundler.js",
-			"import": "./dist/node/bundler.js"
+			"node": "./dist/node/bundler.js"
 		},
 		"./router": {
 			"types": "./dist/types/src/router.d.ts",

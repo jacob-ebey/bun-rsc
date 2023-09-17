@@ -1,10 +1,9 @@
 import { type ReactNode } from "react";
 
-import { incrementOrDecrement } from "../actions/counter.ts";
-import { Counter } from "../components/counter.tsx";
-import { counter } from "../models/counter.ts";
+import { DebugInfo } from "./debug-info.tsx";
 
 export default async function Document({ children }: { children: ReactNode }) {
+	await new Promise((resolve) => setTimeout(resolve, 200));
 	return (
 		<html lang="en">
 			<head>
@@ -20,10 +19,7 @@ export default async function Document({ children }: { children: ReactNode }) {
 						<a href="/about">About</a>
 					</li>
 				</ul>
-				<Counter
-					count={(await counter()).count}
-					incrementOrDecrement={incrementOrDecrement}
-				/>
+				<DebugInfo />
 				{children}
 				{Array(100)
 					.fill("")

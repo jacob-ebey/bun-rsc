@@ -11,17 +11,53 @@ export function Outlet({ id }: { id: string }) {
 	return outlets?.[id];
 }
 
-export function ClientRouter({ rscPayload }: { rscPayload: RSCPayload }) {
+let lastTransition:
+	| {
+			args?: unknown[];
+			from: Location;
+			url?: URL;
+			response: React.Usable<RSCPayload>;
+	  }
+	| undefined = undefined;
+export function ClientRouter({
+	rscPayload: initialRSCPayload,
+}: { rscPayload: RSCPayload }) {
+	const [rscPayload, setRSCPayload] =
+		React.useState<RSCPayload>(initialRSCPayload);
 	const [transitioning, startTransition] = React.useTransition();
-	const [transition, setTransition] = React.useState<
-		| {
-				args?: unknown[];
-				from: Location;
-				url?: URL;
-				response: React.Usable<RSCPayload>;
-		  }
-		| undefined
-	>(undefined);
+
+	const transition = React.useSyncExternalStore(
+		React.useCallback((callback) => {
+			const listener = (
+				event: CustomEvent<{
+					args?: unknown[];
+					from: Location;
+					url?: URL;
+					response: React.Usable<RSCPayload>;
+				}>,
+			) => {
+				lastTransition = event.detail;
+				callback();
+			};
+			window.addEventListener("rsctransition", listener);
+			return () => {
+				window.removeEventListener("rsctransition", listener);
+			};
+		}, []),
+		React.useCallback(() => lastTransition, []),
+		React.useCallback(() => undefined, []),
+	);
+
+	const newRSCPayload = transition?.response
+		? React.use(transition.response)
+		: rscPayload;
+	React.useEffect(() => {
+		if (newRSCPayload !== rscPayload) {
+			startTransition(() => {
+				setRSCPayload(newRSCPayload);
+			});
+		}
+	}, [newRSCPayload, rscPayload]);
 
 	const navigation = React.useMemo<Navigation>(() => {
 		let navigation: Navigation = { state: "idle" };
@@ -35,71 +71,28 @@ export function ClientRouter({ rscPayload }: { rscPayload: RSCPayload }) {
 		return navigation;
 	}, [transitioning, transition]);
 
-	React.useEffect(() => {
-		const listener = (
-			event: CustomEvent<{
-				args?: unknown[];
-				from: Location;
-				url?: URL;
-				response: React.Usable<RSCPayload>;
-			}>,
-		) => {
-			setTransition(event.detail);
-		};
-		window.addEventListener("rsctransition", listener);
-		return () => {
-			window.removeEventListener("rsctransition", listener);
-		};
-	}, [setTransition]);
-
-	React.useEffect(() => {
-		if (transition) {
-			startTransition(() => {
-				setPayloadOrUse(transition.response);
-			});
-		}
-	}, [transition]);
-
-	const [payloadOrUsable, setPayloadOrUse] = React.useState<
-		RSCPayload | React.Usable<RSCPayload>
-	>(rscPayload);
-
-	let payloadToUse = rscPayload;
-	if (payloadOrUsable !== rscPayload) {
-		payloadToUse = React.use(payloadOrUsable as React.Usable<RSCPayload>);
-	}
-
-	React.useEffect(() => {
-		const event = new CustomEvent<RSCPayload>("rsctransitionend", {
-			detail: payloadToUse,
-		});
-		window.dispatchEvent(event);
-	}, [payloadToUse]);
-
-	const element = React.useMemo(
-		() =>
+	const rendered = React.useMemo(() => {
+		return React.createElement(
+			OutletContext.Provider,
+			{
+				value: {
+					location: rscPayload.location,
+					navigation,
+					outlets: rscPayload.routes,
+				},
+			},
 			createRoutingElement(
-				payloadToUse.routes,
-				payloadToUse.match,
-				payloadToUse.found,
+				rscPayload.routes,
+				rscPayload.match,
+				rscPayload.found,
 				{
 					key: 0,
 				},
 			),
-		[payloadToUse],
-	);
+		);
+	}, [rscPayload, navigation]);
 
-	return React.createElement(
-		OutletContext.Provider,
-		{
-			value: {
-				location: payloadToUse.location,
-				navigation,
-				outlets: payloadToUse.routes,
-			},
-		},
-		element,
-	);
+	return rendered;
 }
 
 function createRoutingElement(

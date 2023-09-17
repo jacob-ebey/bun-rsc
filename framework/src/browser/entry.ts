@@ -129,7 +129,7 @@ function clearPendingNavigationsFor(rscPayload: RSCPayload) {
 		(pending) => pending.rscPayload === rscPayload,
 	);
 
-	if (index === -1) {
+	if (index !== -1) {
 		return;
 	}
 
@@ -159,7 +159,47 @@ window.addEventListener("rsctransitionend", (event) => {
 	pendingNavigations.delete(pendingNavigationsArray[index]);
 });
 
-window.callServer = async function callServer(
+function teeResponsePromise(promise: Promise<Response>) {
+	let resolveA: (value: Response) => void;
+	let rejectA: (reason?: unknown) => void;
+	const responsePromiseA = new Promise<Response>((res, rej) => {
+		resolveA = res;
+		rejectA = rej;
+	});
+	let resolveB: (value: Response) => void;
+	let rejectB: (reason?: unknown) => void;
+	const responsePromiseB = new Promise<Response>((res, rej) => {
+		resolveB = res;
+		rejectB = rej;
+	});
+
+	promise
+		.then((response) => {
+			const cloned = response.clone();
+			resolveA(response);
+			resolveB(cloned);
+		})
+		.catch((reason) => {
+			rejectA(reason);
+			rejectB(reason);
+		});
+
+	return [responsePromiseA, responsePromiseB];
+}
+function waitForResponsePromise(promise: Promise<Response>): Promise<void> {
+	return promise.then(async (response) => {
+		if (response.body) {
+			const reader = response.body.getReader();
+			let read = await reader.read();
+			while (!read.done) {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+				read = await reader.read();
+			}
+		}
+	});
+}
+
+window.callServer = async function callServerImp(
 	id: string,
 	args: unknown[],
 	serverCallType?: ServerCallType,
@@ -204,14 +244,15 @@ window.callServer = async function callServer(
 					}),
 				),
 				{
-					callServer,
+					callServer: ((...args) =>
+						window.callServer(...args)) satisfies typeof callServer,
 				},
 			);
 
 			return await response;
 		}
 		case "navigation": {
-			const url = new URL(id);
+			const url = new URL(id, location.origin);
 			const [fromURL, pushState] = args as [
 				string | undefined,
 				boolean | undefined,
@@ -221,22 +262,23 @@ window.callServer = async function callServer(
 			}
 
 			const controller = new AbortController();
-			const response = ReactServerDOM.createFromFetch(
-				cacheOrFetch(
-					new Request(url.pathname + url.search, {
-						method: "GET",
-						headers: {
-							Accept: "text/x-component",
-							"RSC-Navigation": fromURL || "1",
-						},
-						mode: "same-origin",
-						signal: controller.signal,
-					}),
-				),
-				{
-					callServer,
-				},
+			const responsePromise = cacheOrFetch(
+				new Request(url.pathname + url.search, {
+					method: "GET",
+					headers: {
+						Accept: "text/x-component",
+						"RSC-Navigation": fromURL || "1",
+					},
+					mode: "same-origin",
+					signal: controller.signal,
+				}),
 			);
+			const [rscResponsePromise, responsePromiseB] =
+				teeResponsePromise(responsePromise);
+			const response = ReactServerDOM.createFromFetch(rscResponsePromise, {
+				callServer: ((...args) =>
+					window.callServer(...args)) satisfies typeof callServer,
+			});
 
 			const pending: {
 				controller: AbortController;
@@ -252,15 +294,19 @@ window.callServer = async function callServer(
 			const event = new CustomEvent("rsctransition", {
 				detail: { from, url, response },
 			});
+			window.dispatchEvent(event);
 			if (pushState) {
 				history.pushState(null, "", url.pathname + url.search);
 			}
-			window.dispatchEvent(event);
 
-			const rscResponse = await response;
-			pending.rscPayload = rscResponse;
-			clearPendingNavigationsFor(rscResponse);
-			break;
+			responsePromiseB
+				.then(() => response)
+				.then((rscResponse: RSCPayload) => {
+					pending.rscPayload = rscResponse;
+					clearPendingNavigationsFor(rscResponse);
+				});
+
+			return response;
 		}
 		default: {
 			const body = await ReactServerDOM.encodeReply(args);
@@ -280,18 +326,24 @@ window.callServer = async function callServer(
 
 			const url = new URL(window.location.pathname, window.location.origin);
 			const controller = new AbortController();
+			const responsePromise = cacheOrFetch(
+				new Request(url.pathname + url.search, {
+					body,
+					method: "POST",
+					headers,
+					mode: "same-origin",
+					signal: controller.signal,
+				}),
+			);
+			const [rscResponsePromise, responsePromiseB] =
+				teeResponsePromise(responsePromise);
+
 			const response = ReactServerDOM.createFromFetch(
-				cacheOrFetch(
-					new Request(url.pathname + url.search, {
-						body,
-						method: "POST",
-						headers,
-						mode: "same-origin",
-						signal: controller.signal,
-					}),
-				),
+				rscResponsePromise,
+
 				{
-					callServer,
+					callServer: ((...args) =>
+						window.callServer(...args)) satisfies typeof callServer,
 				},
 			);
 			const pending: {
@@ -308,10 +360,13 @@ window.callServer = async function callServer(
 			});
 			window.dispatchEvent(event);
 
-			const rscResponse = await response;
-			pending.rscPayload = rscResponse;
-			clearPendingNavigationsFor(rscResponse);
-			break;
+			responsePromiseB
+				.then(() => response)
+				.then((rscResponse: RSCPayload) => {
+					pending.rscPayload = rscResponse;
+					clearPendingNavigationsFor(rscResponse);
+				});
+			return response;
 		}
 	}
 };
