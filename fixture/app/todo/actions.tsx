@@ -23,6 +23,23 @@ interface APIError {
 	message: string;
 }
 
+export function logout(this: ThisAction) {
+	const cookie = serialize("user", "", {
+		httpOnly: true,
+		path: "/todo",
+		sameSite: "lax",
+		secure: this.url.protocol === "https:",
+		expires: new Date(0),
+		maxAge: 0,
+	});
+
+	throwRedirect(this.url.href, {
+		headers: {
+			"Set-Cookie": cookie,
+		},
+	});
+}
+
 export async function login(this: ThisAction, formData: FormData) {
 	const username = formData.get("username");
 	const password = formData.get("password");
@@ -58,7 +75,7 @@ export async function login(this: ThisAction, formData: FormData) {
 		secure: this.url.protocol === "https:",
 	});
 
-	throwRedirect("/todos", {
+	throwRedirect("/todo", {
 		headers: {
 			"Set-Cookie": cookie,
 		},
