@@ -28,7 +28,9 @@ const buildResult = await Bun.build({
 if (!buildResult.success) {
 	console.error(...buildResult.logs);
 	console.error("Build failed");
-	process.exit(1);
+	if (!process.env.WATCH) {
+		process.exit(1);
+	}
 } else {
 	console.log("Build succeeded");
 }

@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Outlet } from "./router.client.ts";
+import { Boundary, Outlet } from "./router.client.ts";
 import {
 	type FormAction,
 	type RequestContext,
@@ -13,6 +13,7 @@ export interface Routing {
 	loading?: () => Promise<unknown>;
 	notFound?: () => Promise<unknown>;
 	page?: () => Promise<unknown>;
+	problem?: () => Promise<unknown>;
 	route?: () => Promise<unknown>;
 	parallel?: Record<string, Routing>;
 	children?: Routing[];
@@ -24,6 +25,7 @@ export interface ClientRouting {
 	loading?: string;
 	notFound?: string;
 	page?: string;
+	problem?: string;
 	route?: string;
 	parallel?: Record<string, ClientRouting>;
 	children?: ClientRouting[];
@@ -52,9 +54,10 @@ function RequestContextProvider({
 	context: RequestContext;
 }) {
 	const c = getRequestContext() as RequestContext;
-	c.type = "initialized";
-	c.action = context.action;
-	c.url = context.url;
+	for (const [key, value] of Object.entries(context)) {
+		// @ts-ignore
+		c[key] = value;
+	}
 
 	return children;
 }
@@ -66,15 +69,19 @@ function provideContext(context: RequestContext, element: React.ReactElement) {
 export async function createRSCPayload(
 	routingMatch: Routing,
 	found: boolean,
+	headers: Headers,
 	url: URL,
 	action: FormAction | undefined,
+	onResponse: (response: Response) => void,
 ): Promise<RSCPayload> {
 	const routes: Record<string, React.ReactNode> = {};
 
 	const context: RequestContext = {
 		type: "initialized",
-		url,
 		action,
+		headers,
+		url,
+		onResponse,
 	};
 
 	async function createRSCPayloadRecursive(
@@ -130,6 +137,22 @@ export async function createRSCPayload(
 				),
 			);
 			lastId = `${key}-loading`;
+		}
+
+		const problemModule = (await routing.problem?.()) as any;
+		if (problemModule?.default) {
+			clientRouting.problem = `${key}-problem`;
+			routes[`${key}-problem`] = provideContext(
+				context,
+				React.createElement(
+					Boundary,
+					{
+						FallbackComponent: problemModule.default,
+					},
+					React.createElement(Outlet, { id: lastId }),
+				),
+			);
+			lastId = `${key}-problem`;
 		}
 
 		const notFoundModule =
@@ -219,6 +242,7 @@ function matchInternal(
 	current.layout = routing.layout;
 	current.loading = routing.loading;
 	current.notFound = routing.notFound;
+	current.problem = routing.problem;
 
 	if (nextIndex === segments.length) {
 		current.page = routing.page;

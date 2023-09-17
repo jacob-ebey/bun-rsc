@@ -56,11 +56,13 @@ export async function fetch(
 		},
 	);
 
+	const headers = new Headers(rscResponse.headers);
+	headers.delete("Content-Length");
+	headers.set("Content-Type", "text/html");
+	headers.set("Transfer-Encoding", "chunked");
+
 	return new Response(htmlStream, {
-		headers: {
-			"Content-Type": "text/html",
-			"Transfer-Encoding": "chunked",
-		},
+		headers,
 	});
 }
 

@@ -17,7 +17,7 @@ export async function discoverRoutes(importURL: string, appDir: string) {
 	return routes;
 }
 
-const routeRegex = /(layout|loading|not\-found|page|route)\.[tj]sx?$/;
+const routeRegex = /(layout|loading|not\-found|page|problem|route)\.[tj]sx?$/;
 const routeFileExtensions = [".js", ".ts", ".jsx", ".tsx"];
 async function discoverRoutesRecursive(
 	dir: string,
@@ -84,8 +84,21 @@ export async function resolveUseDependencies(
 				case "ExportNamedDeclaration":
 				case "ExportDefaultDeclaration":
 					if (isClientModule || isServerModule) {
+						if (Array.isArray(node.specifiers)) {
+							for (const specifier of node.specifiers) {
+								theExports.push([
+									specifier.exported.name,
+									specifier.local.name,
+								]);
+							}
+						}
+
+						if (!node.declaration) {
+							continue;
+						}
+
 						// TODO: Support `export const abc = () => {};`
-						if (node.declaration.type !== "FunctionDeclaration") {
+						if (node.declaration?.type !== "FunctionDeclaration") {
 							throw new Error(
 								`Only function declarations are allowed to be exported from ${route} when using "use server" or "use client"`,
 							);

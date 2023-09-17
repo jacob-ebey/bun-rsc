@@ -5,10 +5,10 @@ import { getURL } from "framework";
 import { DebugInfo } from "./debug-info.tsx";
 import { ClientCounter } from "../components/counter.tsx";
 
-export default async function Document({ children }: { children: ReactNode }) {
+export default function Document({ children }: { children: ReactNode }) {
 	const url = getURL();
 
-	await new Promise((resolve) => setTimeout(resolve, 200));
+	// await new Promise((resolve) => setTimeout(resolve, 200));
 	return (
 		<html lang="en">
 			<head>
@@ -22,6 +22,9 @@ export default async function Document({ children }: { children: ReactNode }) {
 					</li>
 					<li>
 						<a href="/about">About</a>
+					</li>
+					<li>
+						<a href="/todo">TODO</a>
 					</li>
 				</ul>
 				<DebugInfo url={url.href} />

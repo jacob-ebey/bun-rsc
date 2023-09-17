@@ -1,15 +1,12 @@
 import * as React from "react";
 
+import type { ThisAction } from "../framework.ts";
+// @ts-ignore
 import { ClientRouter } from "framework/client";
 // @ts-ignore
 import * as ReactDOMServer from "#react-server-dom-server-implementation";
 
-import {
-	type Location,
-	type Routing,
-	createRSCPayload,
-	match,
-} from "../router.ts";
+import { type Routing, createRSCPayload, match } from "../router.ts";
 import type { FormAction } from "../framework-internal.ts";
 
 const globalObj = typeof window !== "undefined" ? window : global;
@@ -82,8 +79,9 @@ export async function fetch(
 		);
 
 		const actionModule = globalObj.__webpack_require__(manifestEntry.id);
-		// biome-ignore lint/suspicious/noExplicitAny: todo: fix this
-		const actionFunction = (actionModule as any)?.[manifestEntry.name];
+		const actionFunction = (actionModule as Record<string, Function>)?.[
+			manifestEntry.name
+		];
 
 		if (!actionFunction || typeof actionFunction !== "function") {
 			return notFound();
@@ -99,7 +97,12 @@ export async function fetch(
 			throw new Error("Failed to decode request body");
 		}
 
-		const actionResult = await actionFunction(...decoded);
+		const thisAction: ThisAction = {
+			headers: new Headers(request.headers),
+			url: new URL(request.url),
+		};
+
+		const actionResult = await actionFunction.call(thisAction, ...decoded);
 		const rscStream = ReactDOMServer.renderToReadableStream(
 			actionResult,
 			clientManifest,
@@ -131,8 +134,9 @@ export async function fetch(
 		);
 
 		const actionModule = globalObj.__webpack_require__(manifestEntry.id);
-		// biome-ignore lint/suspicious/noExplicitAny: todo: fix this
-		const actionFunction = (actionModule as any)?.[manifestEntry.name];
+		const actionFunction = (actionModule as Record<string, Function>)?.[
+			manifestEntry.name
+		];
 
 		if (!actionFunction || typeof actionFunction !== "function") {
 			return notFound();
@@ -151,11 +155,32 @@ export async function fetch(
 
 		const formData = decoded[0];
 
-		action = {
-			id: actionId,
-			formData,
-			result: await actionFunction(formData),
+		const thisAction: ThisAction = {
+			headers: new Headers(request.headers),
+			url: new URL(request.url),
 		};
+
+		try {
+			action = {
+				id: actionId,
+				formData,
+				result: await actionFunction.call(thisAction, formData),
+			};
+		} catch (error) {
+			if (error && error instanceof Response) {
+				action = {
+					id: actionId,
+					formData,
+					result: error,
+				};
+			} else {
+				action = {
+					id: actionId,
+					formData,
+					error: error,
+				};
+			}
+		}
 	}
 	// NO-JS forms
 	else if (
@@ -190,25 +215,75 @@ export async function fetch(
 		);
 
 		const actionModule = globalObj.__webpack_require__(manifestEntry.id);
-		// biome-ignore lint/suspicious/noExplicitAny: todo: fix this
-		const actionFunction = (actionModule as any)?.[manifestEntry.name];
+		const actionFunction = (actionModule as Record<string, Function>)?.[
+			manifestEntry.name
+		];
 
 		if (!actionFunction || typeof actionFunction !== "function") {
 			return notFound();
 		}
 
-		action = {
-			id: actionId,
-			formData: actionFormData,
-			result: await actionFunction(actionFormData),
+		const thisAction: ThisAction = {
+			headers: new Headers(request.headers),
+			url: new URL(request.url),
 		};
+
+		try {
+			action = {
+				id: actionId,
+				formData: actionFormData,
+				result: await actionFunction.call(thisAction, actionFormData),
+			};
+		} catch (error) {
+			if (error && error instanceof Response) {
+				action = {
+					id: actionId,
+					formData: actionFormData,
+					result: error,
+				};
+			} else {
+				action = {
+					id: actionId,
+					formData: actionFormData,
+					error: error,
+				};
+			}
+		}
+	}
+
+	if (
+		action &&
+		"result" in action &&
+		action.result &&
+		action.result instanceof Response
+	) {
+		if (action.result.status < 300 || action.result.status >= 400) {
+			throw new Error(
+				"Only redirect responses are supported from server actions",
+			);
+		}
+		if (!action.result.headers.get("Location")) {
+			throw new Error("Redirect response is missing Location header");
+		}
+		return action.result;
 	}
 
 	const [routingMatch, found] = matchedRouting;
 
-	const rscPayload = await createRSCPayload(routingMatch, found, url, action);
+	const responses: Response[] = [];
 
-	const rscStream =
+	const rscPayload = await createRSCPayload(
+		routingMatch,
+		found,
+		request.headers,
+		url,
+		action,
+		(response) => {
+			responses.push(response);
+		},
+	);
+
+	const rscStream: ReadableStream<Uint8Array> =
 		request.headers.has("RSC-Form") || request.headers.has("RSC-Navigation")
 			? ReactDOMServer.renderToReadableStream(rscPayload, clientManifest, {
 					onError: console.error,
@@ -236,5 +311,21 @@ export async function fetch(
 	headers.append("Vary", "RSC-Form");
 	headers.append("Vary", "RSC-Navigation");
 
-	return new Response(rscStream, { headers });
+	const [responseStream, bufferStream] = rscStream.tee();
+
+	const response = new Response(responseStream, { headers });
+
+	const reader = bufferStream.getReader();
+	await reader.read();
+	reader.cancel();
+
+	if (responses.length) {
+		if (responses.length > 1) {
+			throw new Error("Multiple responses were generated in the render cycle");
+		}
+		response.body?.cancel();
+		return responses[0];
+	}
+
+	return response;
 }

@@ -1,15 +1,23 @@
 import * as React from "react";
 
-export interface FormAction {
+export type FormAction = {
 	id: string;
 	formData: FormData;
-	result: unknown;
-}
+} & (
+	| {
+			result: unknown;
+	  }
+	| {
+			error: unknown;
+	  }
+);
 
 export interface RequestContext {
 	type: "initialized";
 	action?: FormAction;
+	headers: Headers;
 	url: URL;
+	onResponse(response: Response): void;
 }
 
 export const getRequestContext = React.cache<

@@ -1,10 +1,61 @@
 "use client";
 
 import * as React from "react";
+import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 import type { Navigation } from "./framework.client.ts";
 import type { ClientRouting, Location, RSCPayload } from "./router.ts";
 import { OutletContext } from "./router.context.ts";
+
+export function DangerousScript({ content }: { content: string }) {
+	const ref = React.useRef<HTMLScriptElement>();
+	const isFirstRender = React.useRef(true);
+
+	React.useEffect(() => {
+		if (!ref.current || ref.current._ran) {
+			return;
+		}
+		if (isFirstRender.current) {
+			isFirstRender.current = false;
+			return;
+		}
+
+		ref.current._ran = true;
+		const script = document.createElement("script");
+		script.appendChild(document.createTextNode(content));
+		document.body.appendChild(script);
+	}, []);
+
+	return React.createElement("script", {
+		ref,
+		dangerouslySetInnerHTML: {
+			__html: `document.currentScript._ran = true;${content}`,
+		},
+	});
+}
+
+export function Boundary({
+	FallbackComponent,
+	children,
+}: {
+	FallbackComponent: React.ComponentType<FallbackProps>;
+	children?: React.ReactNode;
+}) {
+	return React.createElement(
+		ErrorBoundary,
+		{
+			FallbackComponent,
+			onReset() {
+				window.callServer(
+					location.pathname + location.search,
+					[location.pathname, false],
+					"navigation",
+				);
+			},
+		},
+		children,
+	);
+}
 
 export function Outlet({ id }: { id: string }) {
 	const { outlets } = React.useContext(OutletContext) || {};
@@ -118,6 +169,12 @@ function createRoutingElement(
 	const loadingModule = loadingKey ? routes[loadingKey] : undefined;
 	if (loadingKey) {
 		element = loadingModule;
+	}
+
+	const problemKey = routing.problem;
+	const problemModule = problemKey ? routes[problemKey] : undefined;
+	if (problemKey) {
+		element = problemModule;
 	}
 
 	const notFoundKey = !info.handledNotFound && routing.notFound;

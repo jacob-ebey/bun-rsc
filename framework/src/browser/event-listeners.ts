@@ -5,7 +5,12 @@ export function installEventListeners() {
 	}
 
 	window.navigation.addEventListener("navigate", (event) => {
-		if (!event.canIntercept || event.hashChange || event.downloadRequest) {
+		if (
+			!event.canIntercept ||
+			event.hashChange ||
+			event.downloadRequest ||
+			!event.userInitiated
+		) {
 			return;
 		}
 

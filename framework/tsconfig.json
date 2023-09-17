@@ -19,6 +19,8 @@
 		"allowJs": true,
 		"types": ["bun-types", "react/experimental", "react-dom/experimental"],
 		"outDir": "dist/types",
-		"emitDeclarationOnly": true
+		"emitDeclarationOnly": true,
+		"sourceMap": true,
+		"declarationMap": true
 	}
 }

@@ -133,7 +133,6 @@ function clearPendingNavigationsFor(rscPayload: RSCPayload) {
 		return;
 	}
 
-	console.log("clearing", index);
 	for (let i = 0; i < index; i++) {
 		const pending = pendingNavigationsArray[i];
 		pending.controller?.abort();
@@ -299,6 +298,16 @@ window.callServer = async function callServerImp(
 				history.pushState(null, "", url.pathname + url.search);
 			}
 
+			rscResponsePromise.then((response) => {
+				if (response.url !== url.href) {
+					if (pushState) {
+						history.replaceState(null, "", response.url);
+					} else {
+						history.pushState(null, "", response.url);
+					}
+				}
+			});
+
 			responsePromiseB
 				.then(() => response)
 				.then((rscResponse: RSCPayload) => {
@@ -359,6 +368,13 @@ window.callServer = async function callServerImp(
 				detail: { args, from, url, response },
 			});
 			window.dispatchEvent(event);
+
+			rscResponsePromise.then((response) => {
+				if (response.url !== url.href) {
+					// TODO: only replace if the response has or is going to surface
+					history.pushState(null, "", response.url);
+				}
+			});
 
 			responsePromiseB
 				.then(() => response)

@@ -5,6 +5,8 @@ import { createHandler, createDevMiddleware } from "framework/server";
 
 import { createApp } from "./server.js";
 
+process.env.NODE_ENV = "development";
+
 console.time("startup");
 
 const routes = await discoverRoutes(import.meta.url, "app");

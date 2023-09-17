@@ -171,6 +171,8 @@ function createRouting(
 			current.notFound = importRoute;
 		} else if (withoutExt === "page") {
 			current.page = importRoute;
+		} else if (withoutExt === "problem") {
+			current.problem = importRoute;
 		} else if (withoutExt === "route") {
 			current.route = importRoute;
 		} else {
@@ -194,7 +196,9 @@ export function createDevMiddleware(pathname: string) {
 							})}\n\n`,
 						);
 						request.signal.addEventListener("abort", () => {
-							controller.close();
+							setTimeout(() => {
+								controller.close();
+							}, 0);
 						});
 					},
 				}),

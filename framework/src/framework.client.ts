@@ -5,6 +5,12 @@ import { OutletContext } from "./router.context.ts";
 
 export { ClientRouter } from "./router.client.ts";
 
+declare global {
+	interface HTMLScriptElement {
+		_ran?: boolean;
+	}
+}
+
 export function useLocation(): Location {
 	const c = React.useContext(OutletContext);
 	if (!c) {

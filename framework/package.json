@@ -6,7 +6,8 @@
 	"scripts": {
 		"build": "bun build-framework.ts && tsc",
 		"start": "bun server.ts",
-		"node": "bun run build && node server-node.js"
+		"node": "bun run build && node server-node.js",
+		"watch": "WATCH=1 nodemon -e ts,tsx --exec \"bun build-framework.ts\""
 	},
 	"imports": {
 		"#bundler-implementation": {
@@ -76,14 +77,16 @@
 		"hono": "^3.6.0",
 		"react": "experimental",
 		"react-dom": "experimental",
+		"react-error-boundary": "^4.0.11",
 		"react-server-dom-webpack": "experimental",
 		"tsm": "^2.3.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "1.1.2",
+		"@biomejs/biome": "^1.1.2",
 		"@types/react": "^18.2.21",
 		"@types/react-dom": "^18.2.7",
 		"bun-types": "^1.0.1",
+		"nodemon": "^3.0.1",
 		"typescript": "^5.2.2"
 	}
 }

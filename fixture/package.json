@@ -3,9 +3,9 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"build": "node build.js",
+		"build": "node build.js && tsc",
 		"build-bun": "bun build.js",
-		"dev": "nodemon -e ts,tsx dev.js",
+		"dev": "nodemon -w . -i './dist/**' -w ../framework -e ts,tsx,js dev.js",
 		"dev-bun": "bun dev.js",
 		"start-bun": "bun prod.js",
 		"start": "node prod.js"
@@ -13,13 +13,17 @@
 	"dependencies": {
 		"@hono/node-server": "^1.1.1",
 		"@vercel/og": "^0.5.13",
+		"crypto-js": "^4.1.1",
 		"framework": "workspace:*",
+		"cookie": "^0.5.0",
 		"hono": "^3.6.0",
 		"react": "experimental",
 		"react-dom": "experimental",
 		"react-server-dom-webpack": "experimental"
 	},
 	"devDependencies": {
+		"@types/cookie": "^0.5.2",
+		"@types/crypto-js": "^4.1.2",
 		"@types/react": "^18.2.21",
 		"@types/react-dom": "^18.2.7",
 		"bun-types": "latest",

@@ -19,6 +19,11 @@ export async function bundle(
 	const serverDependencies = new Map<string, [string, string][]>();
 	const processed = new Set<string>();
 
+	// const clientModule = await resolver.resolve("framework/client", importURL);
+	// if (!clientModule) {
+	// 	throw new Error("Could not resolve client module");
+	// }
+
 	const frameworkPackageJSONPath = await resolver.resolve(
 		"framework/package.json",
 		importURL,
