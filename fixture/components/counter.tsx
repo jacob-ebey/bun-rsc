@@ -6,6 +6,31 @@ import * as React from "react";
 
 import { PendingLabel } from "./form.tsx";
 
+export function ClientCounter() {
+	const [count, setCount] = React.useState(0);
+	return (
+		<p>
+			Client Count: {count}{" "}
+			<button
+				type="button"
+				onClick={() => {
+					setCount(count - 1);
+				}}
+			>
+				-
+			</button>
+			<button
+				type="button"
+				onClick={() => {
+					setCount(count + 1);
+				}}
+			>
+				+
+			</button>
+		</p>
+	);
+}
+
 export function Counter({
 	count,
 	incrementOrDecrement,

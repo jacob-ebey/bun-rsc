@@ -180,3 +180,83 @@ function createRouting(
 
 	return routeDefinition;
 }
+
+export function createDevMiddleware(pathname: string) {
+	return {
+		hmr(request: Request) {
+			// event-stream
+			return new Response(
+				new ReadableStream({
+					start(controller) {
+						controller.enqueue(
+							`event: message\ndata: ${JSON.stringify({
+								type: "connected",
+							})}\n\n`,
+						);
+						request.signal.addEventListener("abort", () => {
+							controller.close();
+						});
+					},
+				}),
+				{
+					headers: {
+						"Content-Type": "text/event-stream",
+						"Cache-Control": "no-cache",
+						Connection: "keep-alive",
+						"Content-Encoding": "chunked",
+					},
+				},
+			);
+		},
+		html(response: Response) {
+			if (!response.body) {
+				return response;
+			}
+
+			const encoder = new TextEncoder();
+			const transformStream = new TransformStream({
+				flush(controller) {
+					controller.enqueue(
+						encoder.encode(
+							// biome-ignore lint/style/useTemplate: <explanation>
+							'<script type="module">' +
+								"let shouldReload = false;" +
+								`const pathname = ${JSON.stringify(pathname)};` +
+								"function tryReload() {" +
+								'if (typeof window.callServer === "function")' +
+								'window.callServer(location.pathname + location.search, [location.pathname, false], "navigation");' +
+								"else " +
+								"location.reload();" +
+								"}" +
+								"function connect() {" +
+								"const eventSource = new EventSource(pathname);" +
+								'eventSource.addEventListener("open", () => {' +
+								"if (shouldReload) {" +
+								"tryReload();" +
+								"}" +
+								"shouldReload = true;" +
+								"});" +
+								'eventSource.addEventListener("error", () => {' +
+								"eventSource.close();" +
+								"setTimeout(connect, 200);" +
+								"});" +
+								"}" +
+								"connect();" +
+								"</script>",
+						),
+					);
+				},
+			});
+
+			response.body.pipeTo(transformStream.writable);
+
+			return new Response(transformStream.readable, {
+				headers: response.headers,
+				status: response.status,
+				statusText: response.statusText,
+				// @ts-expect-error
+				duplex: "half",
+			});
+		},
+	};
+}

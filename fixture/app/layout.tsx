@@ -3,6 +3,7 @@ import { type ReactNode } from "react";
 import { getURL } from "framework";
 
 import { DebugInfo } from "./debug-info.tsx";
+import { ClientCounter } from "../components/counter.tsx";
 
 export default async function Document({ children }: { children: ReactNode }) {
 	const url = getURL();
@@ -24,6 +25,7 @@ export default async function Document({ children }: { children: ReactNode }) {
 					</li>
 				</ul>
 				<DebugInfo url={url.href} />
+				<ClientCounter />
 				{children}
 				<hr style={{ marginTop: "100vh" }} />
 				{Array(100)

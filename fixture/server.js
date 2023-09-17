@@ -5,8 +5,9 @@ import { etag } from "hono/etag";
  *
  * @param {(response: Response) => Promise<Response>} handler
  * @param {import("hono").MiddlewareHandler} staticHandler
+ * @param {((app: import("hono").Hono) => void)[]} beforeMiddlewares
  */
-export function createApp(handler, staticHandler) {
+export function createApp(handler, staticHandler, ...beforeMiddlewares) {
 	const app = new Hono();
 	app.get(
 		"/dist/browser/*",
@@ -31,6 +32,10 @@ export function createApp(handler, staticHandler) {
 		},
 		staticHandler,
 	);
+
+	for (const middleware of beforeMiddlewares) {
+		middleware(app);
+	}
 
 	const honoAppHandler = (c) => handler(c.req.raw);
 	app.get("*", honoAppHandler);

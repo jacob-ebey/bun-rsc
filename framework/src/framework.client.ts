@@ -66,4 +66,3 @@ export type Asyncify<T> = T extends (...args: infer A) => infer R
 	: never;
 
 export type Parameters<T> = T extends (...args: infer A) => unknown ? A : never;
-

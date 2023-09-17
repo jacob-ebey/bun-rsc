@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "node build.js",
 		"build-bun": "bun build.js",
-		"dev": "node dev.js",
+		"dev": "nodemon -e ts,tsx dev.js",
 		"dev-bun": "bun dev.js",
 		"start-bun": "bun prod.js",
 		"start": "node prod.js"
@@ -23,6 +23,7 @@
 		"@types/react": "^18.2.21",
 		"@types/react-dom": "^18.2.7",
 		"bun-types": "latest",
+		"nodemon": "^3.0.1",
 		"typescript": "^5.2.2"
 	}
 }
