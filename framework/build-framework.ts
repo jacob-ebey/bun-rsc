@@ -5,6 +5,7 @@ const buildResult = await Bun.build({
 		"./src/bundler.ts",
 		"./src/bundler.node.ts",
 		"./src/dynamic-import.node.ts",
+		"./src/framework.ts",
 		"./src/react-dom-server.node.ts",
 		"./src/react-server-dom-client.node.ts",
 		"./src/react-server-dom-server.node.ts",

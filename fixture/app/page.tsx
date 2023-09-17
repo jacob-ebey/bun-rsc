@@ -1,3 +1,5 @@
+import { getFormAction } from "framework";
+
 import { incrementOrDecrement } from "../actions/counter.ts";
 import { sayHello } from "../actions/say-hello.tsx";
 import { Counter } from "../components/counter.tsx";
@@ -9,6 +11,8 @@ export default async function Home() {
 		counter(),
 		new Promise((resolve) => setTimeout(resolve, 1000)),
 	]);
+	const sayHelloAction = getFormAction(sayHello);
+
 	return (
 		<main>
 			<h1>Home</h1>
@@ -35,6 +39,11 @@ export default async function Home() {
 			<form action={sayHello} id="say-hello">
 				<PendingLabel pending="Submitting...">External Form</PendingLabel>
 			</form>
+
+			<div style={{ border: "1px solid var(--nc-bg-3)" }}>
+				<p>Say Hello Result</p>
+				{sayHelloAction.result}
+			</div>
 		</main>
 	);
 }

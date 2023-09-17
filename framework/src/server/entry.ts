@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { ClientRouter } from "framework/client";
 // @ts-ignore
 import * as ReactDOMServer from "#react-server-dom-server-implementation";
 
@@ -9,7 +10,7 @@ import {
 	createRSCPayload,
 	match,
 } from "../router.ts";
-import { ClientRouter } from "framework/client";
+import type { FormAction } from "../framework-internal.ts";
 
 const globalObj = typeof window !== "undefined" ? window : global;
 
@@ -65,6 +66,8 @@ export async function fetch(
 		return apiRouteHandler(request);
 	}
 
+	let action: FormAction | undefined;
+
 	// Manual Action calls
 	if (request.method === "POST" && request.headers.has("RSC-Action")) {
 		const actionId = request.headers.get("RSC-Action");
@@ -79,6 +82,7 @@ export async function fetch(
 		);
 
 		const actionModule = globalObj.__webpack_require__(manifestEntry.id);
+		// biome-ignore lint/suspicious/noExplicitAny: todo: fix this
 		const actionFunction = (actionModule as any)?.[manifestEntry.name];
 
 		if (!actionFunction || typeof actionFunction !== "function") {
@@ -127,24 +131,31 @@ export async function fetch(
 		);
 
 		const actionModule = globalObj.__webpack_require__(manifestEntry.id);
+		// biome-ignore lint/suspicious/noExplicitAny: todo: fix this
 		const actionFunction = (actionModule as any)?.[manifestEntry.name];
 
 		if (!actionFunction || typeof actionFunction !== "function") {
 			return notFound();
 		}
 
-		const decoded = request.headers
-			.get("Content-Type")
-			?.match(/application\/json/)
-			? await request.json()
-			: await ReactDOMServer.decodeReply(await request.formData());
+		const decoded = await ReactDOMServer.decodeReply(await request.formData());
 
-		if (!Array.isArray(decoded)) {
+		if (
+			!Array.isArray(decoded) ||
+			decoded.length !== 1 ||
+			!decoded[0] ||
+			!(decoded[0] instanceof FormData)
+		) {
 			throw new Error("Failed to decode request body");
 		}
 
-		// TODO: Store action for surfacing in render cycle
-		await actionFunction(...decoded);
+		const formData = decoded[0];
+
+		action = {
+			id: actionId,
+			formData,
+			result: await actionFunction(formData),
+		};
 	}
 	// NO-JS forms
 	else if (
@@ -179,20 +190,23 @@ export async function fetch(
 		);
 
 		const actionModule = globalObj.__webpack_require__(manifestEntry.id);
+		// biome-ignore lint/suspicious/noExplicitAny: todo: fix this
 		const actionFunction = (actionModule as any)?.[manifestEntry.name];
 
 		if (!actionFunction || typeof actionFunction !== "function") {
 			return notFound();
 		}
 
-		// TODO: Store action for surfacing in render cycle
-		await actionFunction(actionFormData);
+		action = {
+			id: actionId,
+			formData: actionFormData,
+			result: await actionFunction(actionFormData),
+		};
 	}
 
 	const [routingMatch, found] = matchedRouting;
-	const location: Location = { pathname: url.pathname, search: url.search };
 
-	const rscPayload = await createRSCPayload(routingMatch, found, location);
+	const rscPayload = await createRSCPayload(routingMatch, found, url, action);
 
 	const rscStream =
 		request.headers.has("RSC-Form") || request.headers.has("RSC-Navigation")

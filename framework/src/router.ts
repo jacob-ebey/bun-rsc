@@ -1,6 +1,11 @@
 import * as React from "react";
 
 import { Outlet } from "./router.client.ts";
+import {
+	type FormAction,
+	type RequestContext,
+	getRequestContext,
+} from "./framework-internal.ts";
 
 export interface Routing {
 	path?: string;
@@ -39,12 +44,38 @@ export interface Location {
 
 export type ServerCallType = "form" | "action" | "navigation";
 
+function RequestContextProvider({
+	children,
+	context,
+}: {
+	children?: React.ReactNode;
+	context: RequestContext;
+}) {
+	const c = getRequestContext() as RequestContext;
+	c.type = "initialized";
+	c.action = context.action;
+	c.url = context.url;
+
+	return children;
+}
+
+function provideContext(context: RequestContext, element: React.ReactElement) {
+	return React.createElement(RequestContextProvider, { context }, element);
+}
+
 export async function createRSCPayload(
 	routingMatch: Routing,
 	found: boolean,
-	location: Location,
+	url: URL,
+	action: FormAction | undefined,
 ): Promise<RSCPayload> {
 	const routes: Record<string, React.ReactNode> = {};
+
+	const context: RequestContext = {
+		type: "initialized",
+		url,
+		action,
+	};
 
 	async function createRSCPayloadRecursive(
 		routing: typeof routingMatch,
@@ -73,21 +104,30 @@ export async function createRSCPayload(
 			: undefined;
 		if (routeModule?.default) {
 			clientRouting.page = `${key}-page`;
-			routes[`${key}-page`] = React.createElement(routeModule.default, {});
+			routes[`${key}-page`] = provideContext(
+				context,
+				React.createElement(routeModule.default, {}),
+			);
 			lastId = `${key}-page`;
 		}
 
 		const loadingModule = (await routing.loading?.()) as any;
 		if (loadingModule?.default) {
-			const fallback = React.createElement(loadingModule.default);
+			const fallback = provideContext(
+				context,
+				React.createElement(loadingModule.default),
+			);
 			clientRouting.loading = `${key}-loading`;
-			routes[`${key}-loading`] = React.createElement(
-				React.Suspense,
-				{
-					key: lastId,
-					fallback,
-				},
-				React.createElement(Outlet, { id: lastId }),
+			routes[`${key}-loading`] = provideContext(
+				context,
+				React.createElement(
+					React.Suspense,
+					{
+						key: lastId,
+						fallback,
+					},
+					React.createElement(Outlet, { id: lastId }),
+				),
 			);
 			lastId = `${key}-loading`;
 		}
@@ -99,10 +139,13 @@ export async function createRSCPayload(
 		if (notFoundModule?.default) {
 			info.handledNotFound = true;
 			clientRouting.notFound = `${key}-not-found`;
-			routes[`${key}-not-found`] = React.createElement(
-				notFoundModule.default,
-				{},
-				React.createElement(Outlet, { id: lastId }),
+			routes[`${key}-not-found`] = provideContext(
+				context,
+				React.createElement(
+					notFoundModule.default,
+					{},
+					React.createElement(Outlet, { id: lastId }),
+				),
 			);
 			lastId = `${key}-not-found`;
 		}
@@ -110,10 +153,13 @@ export async function createRSCPayload(
 		const layoutModule = (await routing.layout?.()) as any;
 		if (layoutModule?.default) {
 			clientRouting.layout = `${key}-layout`;
-			routes[`${key}-layout`] = React.createElement(
-				layoutModule.default,
-				{},
-				React.createElement(Outlet, { id: lastId }),
+			routes[`${key}-layout`] = provideContext(
+				context,
+				React.createElement(
+					layoutModule.default,
+					{},
+					React.createElement(Outlet, { id: lastId }),
+				),
 			);
 			lastId = `${key}-layout`;
 		}
@@ -127,8 +173,11 @@ export async function createRSCPayload(
 		found,
 		match: clientRouting,
 		routes,
-		location,
-		actionId: undefined,
+		location: {
+			pathname: url.pathname,
+			search: url.search,
+		},
+		actionId: action?.id,
 	};
 }
 
