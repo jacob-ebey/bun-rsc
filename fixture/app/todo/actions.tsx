@@ -105,7 +105,6 @@ export async function updateTodo(this: ThisAction, formData: FormData) {
 	}).then((response) => response.json());
 
 	if ("message" in response) {
-		throw new Error(response.message);
 		return <p style={{ color: "red" }}>{response.message}</p>;
 	}
 }
