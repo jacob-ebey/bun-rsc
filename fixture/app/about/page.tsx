@@ -3,10 +3,7 @@ import { Counter } from "../../components/counter.tsx";
 import { counter } from "../../models/counter.ts";
 
 export default async function About() {
-	const [{ count }] = await Promise.all([
-		counter(),
-		new Promise((resolve) => setTimeout(resolve, 1000)),
-	]);
+	const [{ count }] = await Promise.all([counter()]);
 	return (
 		<main>
 			<h1>About</h1>

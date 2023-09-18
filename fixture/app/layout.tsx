@@ -8,7 +8,6 @@ import { ClientCounter } from "../components/counter.tsx";
 export default function Document({ children }: { children: ReactNode }) {
 	const url = getURL();
 
-	// await new Promise((resolve) => setTimeout(resolve, 200));
 	return (
 		<html lang="en">
 			<head>
@@ -16,18 +15,14 @@ export default function Document({ children }: { children: ReactNode }) {
 				<link rel="stylesheet" href="/static/styles/global.css" />
 			</head>
 			<body>
-				<ul>
-					<li>
-						<a href="/">Home</a>
-					</li>
-					<li>
-						<a href="/about">About</a>
-					</li>
-					<li>
+				<header>
+					<nav>
+						<h1>Framework</h1>
+						<a href="/">Home</a> / <a href="/about">About</a> /{" "}
 						<a href="/todo">TODO</a>
-					</li>
-				</ul>
-				<DebugInfo url={url.href} />
+					</nav>
+				</header>
+				{process.env.DEBUG ? <DebugInfo url={url.href} /> : null}
 				<ClientCounter />
 				{children}
 				<hr style={{ marginTop: "100vh" }} />

@@ -7,10 +7,7 @@ import { PendingLabel } from "../components/form.tsx";
 import { counter } from "../models/counter.ts";
 
 export default async function Home() {
-	const [{ count }] = await Promise.all([
-		counter(),
-		new Promise((resolve) => setTimeout(resolve, 1000)),
-	]);
+	const [{ count }] = await Promise.all([counter()]);
 	const sayHelloAction = getFormAction(sayHello);
 
 	return (

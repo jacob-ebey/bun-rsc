@@ -11,6 +11,11 @@ declare global {
 	}
 }
 
+export interface ProblemProps {
+	error: unknown;
+	resetErrorBoundary(): void;
+}
+
 export function useLocation(): Location {
 	const c = React.useContext(OutletContext);
 	if (!c) {

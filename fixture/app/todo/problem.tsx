@@ -1,12 +1,18 @@
 "use client";
 
-import type { FallbackProps } from "react-error-boundary";
+import { type ProblemProps } from "framework/client";
 
-export default function TODOProblem({ error }: FallbackProps) {
-	console.log(error);
+export default function TODOProblem({
+	error,
+	resetErrorBoundary,
+}: ProblemProps) {
+	console.error(error);
 	return (
 		<main>
 			<h1>Oops</h1>
+			<button type="button" onClick={resetErrorBoundary}>
+				Reset
+			</button>
 		</main>
 	);
 }

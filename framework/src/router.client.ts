@@ -44,6 +44,8 @@ export function Boundary({
 	return React.createElement(
 		ErrorBoundary,
 		{
+			// TODO: this doesn't work as some state is stuck.
+			// I think this needs a "key" based on the location.
 			FallbackComponent,
 			onReset() {
 				window.callServer(

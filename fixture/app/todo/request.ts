@@ -12,33 +12,35 @@ export interface User {
 	token: string;
 }
 
-export const getUser = React.cache(async (): Promise<User | null> => {
-	// TODO: remove development secret
-	const sessionSecret = getSecret("SESSION_SECRET", "session_secret");
-	const headers = getHeaders();
-	const cookie = headers.get("Cookie");
-	const cookies = cookie ? parse(cookie) : null;
-	if (!cookies?.user) return null;
+export const getUser = React.cache(
+	async (inputHeaders?: Headers): Promise<User | null> => {
+		// TODO: remove development secret
+		const sessionSecret = getSecret("SESSION_SECRET", "session_secret");
+		const headers = inputHeaders || getHeaders();
+		const cookie = headers.get("Cookie");
+		const cookies = cookie ? parse(cookie) : null;
+		if (!cookies?.user) return null;
 
-	const unsigned = await crypto.unsign(cookies.user, sessionSecret);
-	if (!unsigned) return null;
+		const unsigned = await crypto.unsign(cookies.user, sessionSecret);
+		if (!unsigned) return null;
 
-	const user = JSON.parse(unsigned) as User;
-	if (
-		typeof user.id !== "number" ||
-		typeof user.username !== "string" ||
-		typeof user?.token !== "string"
-	)
-		return null;
+		const user = JSON.parse(unsigned) as User;
+		if (
+			typeof user.id !== "number" ||
+			typeof user.username !== "string" ||
+			typeof user?.token !== "string"
+		)
+			return null;
 
-	const decryptedToken = CryptoJS.AES.decrypt(
-		user.token,
-		sessionSecret,
-	).toString(CryptoJS.enc.Utf8);
+		const decryptedToken = CryptoJS.AES.decrypt(
+			user.token,
+			sessionSecret,
+		).toString(CryptoJS.enc.Utf8);
 
-	return {
-		id: user.id,
-		username: user.username,
-		token: decryptedToken,
-	};
-});
+		return {
+			id: user.id,
+			username: user.username,
+			token: decryptedToken,
+		};
+	},
+);

@@ -56,10 +56,24 @@ export function getURL() {
 	return c.url;
 }
 
+const redirectSymbol = Symbol("framework.redirect");
+
+export type FrameworkRedirect = React.ReactElement & {
+	__framework_redirect: typeof redirectSymbol;
+};
+
+export function isRedirect(element: unknown): element is FrameworkRedirect {
+	return (
+		React.isValidElement(element) &&
+		element.type === DangerousScript &&
+		(element as FrameworkRedirect).__framework_redirect === redirectSymbol
+	);
+}
+
 export function throwRedirect(
 	to: string,
 	statusCodeOrInit: number | ResponseInit = 302,
-): never {
+): FrameworkRedirect {
 	const c = getRequestContext();
 
 	const status = typeof statusCodeOrInit === "number" ? statusCodeOrInit : 302;
@@ -83,11 +97,14 @@ export function throwRedirect(
 	c.onResponse(response);
 
 	// TODO: Allow external redirects
-	return React.createElement(DangerousScript, {
+	const redirect = React.createElement(DangerousScript, {
 		content: `if (window.callServer){window.callServer(${JSON.stringify(
 			to,
 		)}, [location.pathname, false], "navigation");window.history.replaceState({redirect:true}, '', ${JSON.stringify(
 			to,
 		)});} else window.location.href = ${JSON.stringify(to)};`,
-	}) as never;
+	}) as FrameworkRedirect;
+	redirect.__framework_redirect = redirectSymbol;
+
+	return redirect;
 }
