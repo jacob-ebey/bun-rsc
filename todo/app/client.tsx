@@ -6,25 +6,14 @@ import * as React from "react";
 import { experimental_useFormStatus as useFormStatus } from "react-dom";
 
 export function Pending({
-	action,
-	pending,
 	children,
+	pending,
 }: {
-	action?: (formData: FormData) => unknown;
-	pending: React.ReactNode;
 	children: React.ReactNode;
+	pending: React.ReactNode;
 }) {
 	const status = useFormStatus();
-
-	if (action && status.action && status.action !== action) {
-		return children;
-	}
-
-	if (status.pending) {
-		return pending;
-	}
-
-	return children;
+	return status.pending ? pending : children;
 }
 
 export function EnhancedForm(
@@ -32,7 +21,6 @@ export function EnhancedForm(
 		submitOnChanged?: string[];
 	},
 ) {
-	const status = useFormStatus();
 	return (
 		<form
 			{...props}

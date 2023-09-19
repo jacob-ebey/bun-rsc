@@ -1,7 +1,7 @@
 import { login, signup } from "./actions.tsx";
 import { FormErrors, FullScreenForm, Input, Submit } from "./components.tsx";
 
-import { Pending } from "./client-components.tsx";
+import { Pending } from "./client.tsx";
 
 export function LoginForm({
 	error,

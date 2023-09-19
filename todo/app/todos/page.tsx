@@ -3,12 +3,12 @@ import * as React from "react";
 import { getFormAction, throwRedirect } from "framework";
 
 import * as models from "../../models/mod.ts";
-import { EnhancedForm } from "../client-components.tsx";
+import { EnhancedForm } from "../client.tsx";
+import { Pending } from "../client.tsx";
 import { Checkbox, Input, Submit } from "../components.tsx";
 import { loginPathname } from "../config.ts";
-import { addTodo, deleteTodo, editTodo } from "./actions.tsx";
-import { Pending } from "./client.tsx";
 import { getUser } from "../utils.ts";
+import { addTodo, deleteTodo, editTodo } from "./actions.tsx";
 
 export default async function Todos() {
 	const addAction = getFormAction(addTodo);

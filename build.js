@@ -22,6 +22,17 @@ async function build() {
 	if (await step.exited) {
 		throw new Error("Failed to build fixture");
 	}
+
+	console.log("Building todo...");
+	step = Bun.spawn(["bun", "run", "build"], {
+		stderr: "inherit",
+		stdout: "inherit",
+		cwd: path.resolve(process.cwd(), "todo"),
+	});
+
+	if (await step.exited) {
+		throw new Error("Failed to build todo");
+	}
 }
 
 await build();
