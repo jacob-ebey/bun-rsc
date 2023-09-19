@@ -26,27 +26,22 @@ declare global {
 	// biome-ignore lint/style/noVar: <explanation>
 	var invalidateCache: (invalidate: string) => Promise<void>;
 
+	interface RSCTransitionEventArgs {
+		identity: unknown;
+		args?: unknown[];
+		from: Location;
+		url?: URL;
+		response?: React.Usable<RSCPayload>;
+	}
 	interface Window {
 		addEventListener(
 			type: "rsctransition",
-			listener: (
-				event: CustomEvent<{
-					args?: unknown[];
-					from: Location;
-					url?: URL;
-					response: React.Usable<RSCPayload>;
-				}>,
-			) => void,
+			listener: (event: CustomEvent<RSCTransitionEventArgs>) => void,
 		): void;
 		removeEventListener(
 			type: "rsctransition",
 			listener: (
-				event: CustomEvent<{
-					args?: unknown[];
-					from: Location;
-					url?: URL;
-					response: React.Usable<RSCPayload>;
-				}>,
+				event: CustomEvent<RSCTransitionEventArgs>,
 			) => void,
 		): void;
 		addEventListener(
@@ -158,46 +153,6 @@ window.addEventListener("rsctransitionend", (event) => {
 	pendingNavigations.delete(pendingNavigationsArray[index]);
 });
 
-function teeResponsePromise(promise: Promise<Response>) {
-	let resolveA: (value: Response) => void;
-	let rejectA: (reason?: unknown) => void;
-	const responsePromiseA = new Promise<Response>((res, rej) => {
-		resolveA = res;
-		rejectA = rej;
-	});
-	let resolveB: (value: Response) => void;
-	let rejectB: (reason?: unknown) => void;
-	const responsePromiseB = new Promise<Response>((res, rej) => {
-		resolveB = res;
-		rejectB = rej;
-	});
-
-	promise
-		.then((response) => {
-			const cloned = response.clone();
-			resolveA(response);
-			resolveB(cloned);
-		})
-		.catch((reason) => {
-			rejectA(reason);
-			rejectB(reason);
-		});
-
-	return [responsePromiseA, responsePromiseB];
-}
-function waitForResponsePromise(promise: Promise<Response>): Promise<void> {
-	return promise.then(async (response) => {
-		if (response.body) {
-			const reader = response.body.getReader();
-			let read = await reader.read();
-			while (!read.done) {
-				await new Promise((resolve) => setTimeout(resolve, 0));
-				read = await reader.read();
-			}
-		}
-	});
-}
-
 window.callServer = async function callServerImp(
 	id: string,
 	args: unknown[],
@@ -248,7 +203,7 @@ window.callServer = async function callServerImp(
 				},
 			);
 
-			return await response;
+			return response;
 		}
 		case "navigation": {
 			const url = new URL(id, location.origin);
@@ -272,9 +227,7 @@ window.callServer = async function callServerImp(
 					signal: controller.signal,
 				}),
 			);
-			const [rscResponsePromise, responsePromiseB] =
-				teeResponsePromise(responsePromise);
-			const response = ReactServerDOM.createFromFetch(rscResponsePromise, {
+			const response = ReactServerDOM.createFromFetch(responsePromise, {
 				callServer: ((...args) =>
 					window.callServer(...args)) satisfies typeof callServer,
 			});
@@ -290,15 +243,30 @@ window.callServer = async function callServerImp(
 				search: window.location.search,
 			};
 
+			const identity = {};
 			const event = new CustomEvent("rsctransition", {
-				detail: { from, url, response },
+				detail: { identity, from, url },
 			});
 			window.dispatchEvent(event);
 			if (pushState) {
 				history.pushState(null, "", url.pathname + url.search);
 			}
 
-			rscResponsePromise.then((response) => {
+			Promise.resolve(response)
+				.then(() => {
+					pending.rscPayload = response;
+					const event = new CustomEvent("rsctransition", {
+						detail: { identity, from, url, response },
+					});
+					window.dispatchEvent(event);
+					return response;
+				})
+				.then((rscResponse: RSCPayload) => {
+					clearPendingNavigationsFor(rscResponse);
+				});
+
+			responsePromise.then((response) => {
+				if (controller.signal.aborted) return;
 				if (response.url !== url.href) {
 					if (pushState) {
 						history.replaceState(null, "", response.url);
@@ -307,13 +275,6 @@ window.callServer = async function callServerImp(
 					}
 				}
 			});
-
-			responsePromiseB
-				.then(() => response)
-				.then((rscResponse: RSCPayload) => {
-					pending.rscPayload = rscResponse;
-					clearPendingNavigationsFor(rscResponse);
-				});
 
 			return response;
 		}
@@ -344,11 +305,9 @@ window.callServer = async function callServerImp(
 					signal: controller.signal,
 				}),
 			);
-			const [rscResponsePromise, responsePromiseB] =
-				teeResponsePromise(responsePromise);
 
 			const response = ReactServerDOM.createFromFetch(
-				rscResponsePromise,
+				responsePromise,
 
 				{
 					callServer: ((...args) =>
@@ -364,24 +323,29 @@ window.callServer = async function callServerImp(
 				pathname: window.location.pathname,
 				search: window.location.search,
 			};
+			const identity = {};
 			const event = new CustomEvent("rsctransition", {
-				detail: { args, from, url, response },
+				detail: { identity, args, from, url },
 			});
 			window.dispatchEvent(event);
+			if (response.url !== url.href) {
+				// TODO: only replace if the response has or is going to surface
+				history.pushState(null, "", response.url);
+			}
 
-			rscResponsePromise.then((response) => {
-				if (response.url !== url.href) {
-					// TODO: only replace if the response has or is going to surface
-					history.pushState(null, "", response.url);
-				}
-			});
-
-			responsePromiseB
-				.then(() => response)
+			Promise.resolve(response)
+				.then(() => {
+					pending.rscPayload = response;
+					const event = new CustomEvent("rsctransition", {
+						detail: { identity, args, from, url, response },
+					});
+					window.dispatchEvent(event);
+					return response;
+				})
 				.then((rscResponse: RSCPayload) => {
-					pending.rscPayload = rscResponse;
 					clearPendingNavigationsFor(rscResponse);
 				});
+
 			return response;
 		}
 	}
