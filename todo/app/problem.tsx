@@ -2,20 +2,27 @@
 
 import { ProblemProps } from "framework/client";
 
-export default function NotFound({ error, resetErrorBoundary }: ProblemProps) {
+export default function Problem({ error, resetErrorBoundary }: ProblemProps) {
+	let displayMessage: string | undefined;
+	let displayStack: string | undefined;
+	if (error && error instanceof Error) {
+		displayMessage = error.message;
+		displayStack = error.stack;
+	} else if (typeof error === "object") {
+		displayStack = JSON.stringify(error, null, 2);
+	} else {
+		displayStack = String(error);
+	}
+
 	return (
-		<main className="flex flex-col justify-center items-center h-full w-full bg-gray-100">
-			<h1 className="text-6xl font-bold text-gray-900 mb-4">Oops</h1>
-			<p className="text-xl text-gray-700">Something went wrong 😅</p>
-			<p className="mt-4">
-				<button
-					type="button"
-					className="block text-center bg-blue-500 text-white rounded-lg px-4 py-2 w-full"
-					onClick={resetErrorBoundary}
-				>
-					Reload the page
-				</button>
-			</p>
-		</main>
+		<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg w-full max-w-md my-4">
+			<strong className="font-semibold">Unknown Error:</strong>
+			{displayMessage && <p className="text-sm mt-1">{displayMessage}</p>}
+			{displayStack && (
+				<pre className="text-xs bg-gray-200 p-2 rounded mt-2 overflow-x-scroll">
+					{displayStack}
+				</pre>
+			)}
+		</div>
 	);
 }
