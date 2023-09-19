@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -41,6 +41,10 @@ export async function bundle(
 	const serverEntry = path.join(frameworkDir, "src", "server", "entry.ts");
 	const serverOutdir = path.join(outdir, "server");
 
+	const pkgJsonPath = path.join(root, "package.json");
+	const pkgJson = await readFile(pkgJsonPath, "utf8");
+	const pkg = JSON.parse(pkgJson);
+
 	console.time("walk routes for directives");
 	await resolveUseDependencies(
 		[serverEntry, ...routes.values()],
@@ -64,6 +68,7 @@ export async function bundle(
 		serverOutdir,
 		ssrEntry,
 		ssrOutdir,
+		serverExternals: pkg.bundler?.serverExternals ?? [],
 	});
 
 	await writeFile(

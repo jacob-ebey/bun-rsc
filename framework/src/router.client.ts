@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import {
+	type ErrorBoundaryPropsWithComponent,
+	ErrorBoundary,
+} from "react-error-boundary";
 
-import type { Navigation } from "./framework.client.ts";
+import type { Navigation, ProblemProps } from "./framework.client.ts";
 import type { ClientRouting, Location, RSCPayload } from "./router.ts";
 import { OutletContext } from "./router.context.ts";
 
@@ -38,21 +41,18 @@ export function Boundary({
 	FallbackComponent,
 	children,
 }: {
-	FallbackComponent: React.ComponentType<FallbackProps>;
+	FallbackComponent: React.ComponentType<ProblemProps>;
 	children?: React.ReactNode;
 }) {
 	return React.createElement(
-		ErrorBoundary,
+		ErrorBoundary as React.ComponentType<ErrorBoundaryPropsWithComponent>,
 		{
 			// TODO: this doesn't work as some state is stuck.
 			// I think this needs a "key" based on the location.
-			FallbackComponent,
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			FallbackComponent: FallbackComponent as any,
 			onReset() {
-				window.callServer(
-					location.pathname + location.search,
-					[location.pathname, false],
-					"navigation",
-				);
+				window.location.reload();
 			},
 		},
 		children,

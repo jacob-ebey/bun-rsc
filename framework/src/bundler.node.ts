@@ -18,6 +18,7 @@ export async function bundle({
 	routes,
 	serverDependencies,
 	serverEntry,
+	serverExternals,
 	serverOutdir,
 	ssrEntry,
 	ssrOutdir,
@@ -91,9 +92,9 @@ export async function bundle({
 
 				return {
 					contents,
-					loader: args.path.slice(
-						args.path.lastIndexOf(".") + 1,
-					) as esbuild.Loader,
+					loader: args.path
+						.slice(args.path.lastIndexOf(".") + 1)
+						.replace(/^[mc]/, "") as esbuild.Loader,
 				};
 			});
 		},
@@ -176,13 +177,16 @@ export async function bundle({
 	const serverBuild = await esbuild.build({
 		bundle: true,
 		write: true,
-		external: [
-			"react",
-			"react-dom",
-			"react-dom/server.node",
-			"react-server-dom-webpack/client.node",
-			"react-server-dom-webpack/server.node",
-		],
+		external: Array.from(
+			new Set([
+				"react",
+				"react-dom",
+				"react-dom/server.node",
+				"react-server-dom-webpack/client.node",
+				"react-server-dom-webpack/server.node",
+				...serverExternals,
+			]),
+		),
 		entryPoints: [
 			serverEntry,
 			...serverDependencies.keys(),
@@ -280,9 +284,9 @@ export async function bundle({
 
 						return {
 							contents,
-							loader: args.path.slice(
-								args.path.lastIndexOf(".") + 1,
-							) as esbuild.Loader,
+							loader: args.path
+								.slice(args.path.lastIndexOf(".") + 1)
+								.replace(/^[mc]/, "") as esbuild.Loader,
 						};
 					});
 				},

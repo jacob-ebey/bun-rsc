@@ -1,4 +1,5 @@
 import * as path from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import type { Routing } from "framework/router";

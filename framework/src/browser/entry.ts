@@ -232,7 +232,7 @@ window.callServer = async function callServerImp(
 				headers["Content-Type"] = "application/json";
 			}
 
-			const url = new URL(window.location.pathname, window.location.origin);
+			const url = new URL(window.location.href);
 			const response = ReactServerDOM.createFromFetch(
 				cacheOrFetch(
 					new Request(url.pathname + url.search, {
@@ -333,7 +333,7 @@ window.callServer = async function callServerImp(
 				headers["Content-Type"] = "application/json";
 			}
 
-			const url = new URL(window.location.pathname, window.location.origin);
+			const url = new URL(window.location.href);
 			const controller = new AbortController();
 			const responsePromise = cacheOrFetch(
 				new Request(url.pathname + url.search, {

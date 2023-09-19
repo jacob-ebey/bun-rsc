@@ -155,6 +155,14 @@ export async function fetch(
 
 		const formData = decoded[0];
 
+		const actionFormData = new FormData();
+		for (const [key, value] of formData) {
+			const actionMatch = key.match(/^(\d+\_)?\$ACTION_ID_/);
+			if (!actionMatch) {
+				actionFormData.append(key, value);
+			}
+		}
+
 		const thisAction: ThisAction = {
 			headers: new Headers(request.headers),
 			url: new URL(request.url),
@@ -163,20 +171,20 @@ export async function fetch(
 		try {
 			action = {
 				id: actionId,
-				formData,
-				result: await actionFunction.call(thisAction, formData),
+				formData: actionFormData,
+				result: await actionFunction.call(thisAction, actionFormData),
 			};
 		} catch (error) {
 			if (error && error instanceof Response) {
 				action = {
 					id: actionId,
-					formData,
+					formData: actionFormData,
 					result: error,
 				};
 			} else {
 				action = {
 					id: actionId,
-					formData,
+					formData: actionFormData,
 					error: error,
 				};
 			}

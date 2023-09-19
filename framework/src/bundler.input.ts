@@ -1,5 +1,6 @@
 export interface BundlerOptions {
 	browserEntry: string;
+	serverExternals: string[];
 	browserOutdir: string;
 	clientDependencies: Map<string, [string, string][]>;
 	environment: "development" | "production";

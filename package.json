@@ -2,7 +2,8 @@
 	"name": "bun-rsc",
 	"private": true,
 	"type": "module",
-	"workspaces": ["fixture", "framework"],
+	"workspaces": ["fixture", "framework", "todo"],
+	"trustedDependencies": ["better-sqlite3"],
 	"scripts": {
 		"build": "bun build.js"
 	}
