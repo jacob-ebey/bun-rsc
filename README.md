@@ -1,15 +1,15 @@
 # bun-rsc
 
-To install dependencies:
+To setup:
 
 ```bash
 bun install
+bun run build
 ```
 
-To run:
+To run fixtures:
 
 ```bash
-bun run index.ts
+cd todo
+bun run dev
 ```
-
-This project was created using `bun init` in bun v1.0.0. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
