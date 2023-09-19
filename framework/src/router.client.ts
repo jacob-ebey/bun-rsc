@@ -75,6 +75,9 @@ export function ClientRouter({
 		RSCTransitionEventArgs | undefined
 	>();
 	React.useEffect(() => {
+		// TODO: install global event listeners here to avoid missing
+		// any navigation events that occur before react can hydrate
+		// and run effects.
 		const listener = (event: CustomEvent<RSCTransitionEventArgs>) => {
 			setTransition({
 				...event.detail,
