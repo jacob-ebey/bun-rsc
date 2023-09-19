@@ -10,7 +10,10 @@ export default async function Home() {
 	const signupAction = getFormAction(signup);
 	const url = getURL();
 
-	const [user] = await Promise.all([getUser()]);
+	const [user] = await Promise.all([
+		getUser(),
+		// Other async data you want to fetch
+	]);
 
 	let mode: "login" | "signup" | "logged-in" = "login";
 	if (user) {

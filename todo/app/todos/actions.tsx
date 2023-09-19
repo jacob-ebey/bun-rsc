@@ -18,7 +18,7 @@ const deleteSchema = v.object({
 });
 
 export async function deleteTodo(this: ThisAction, formData: FormData) {
-	const [user] = await Promise.all([getUser(this.headers)]);
+	const user = await getUser(this.headers);
 
 	if (!user) {
 		throwRedirect(loginPathname);
@@ -57,7 +57,7 @@ const addSchema = v.object({
 });
 
 export async function addTodo(this: ThisAction, formData: FormData) {
-	const [user] = await Promise.all([getUser(this.headers)]);
+	const user = await getUser(this.headers);
 
 	if (!user) {
 		return throwRedirect(loginPathname);
@@ -91,7 +91,7 @@ const editSchema = v.object({
 });
 
 export async function editTodo(this: ThisAction, formData: FormData) {
-	const [user] = await Promise.all([getUser(this.headers)]);
+	const user = await getUser(this.headers);
 
 	if (!user) {
 		throwRedirect(loginPathname);

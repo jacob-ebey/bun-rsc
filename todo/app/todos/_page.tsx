@@ -15,7 +15,7 @@ export default async function Todos() {
 	const deleteAction = getFormAction(deleteTodo);
 	const editAction = getFormAction(editTodo);
 
-	const [user] = await Promise.all([getUser()]);
+	const user = await getUser();
 
 	if (!user) {
 		return throwRedirect(loginPathname);
