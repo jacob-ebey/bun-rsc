@@ -72,7 +72,7 @@ function TodoItem({
 }) {
 	return (
 		<li>
-			<EnhancedForm action={editTodo}>
+			<EnhancedForm action={editTodo} submitOnChanged={["completed"]}>
 				<input type="hidden" name="id" value={todo.id} />
 				<input type="hidden" name="task" value={todo.task} />
 

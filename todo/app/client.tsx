@@ -16,11 +16,17 @@ export function Pending({
 	return status.pending ? pending : children;
 }
 
-export function EnhancedForm(
-	props: React.HTMLProps<HTMLFormElement> & {
-		submitOnChanged?: string[];
-	},
-) {
+export function EnhancedForm({
+	submitOnChanged,
+	...props
+}: React.HTMLProps<HTMLFormElement> & {
+	submitOnChanged?: string[];
+}) {
+	const submitOnChangedSet = React.useMemo(
+		() => new Set(submitOnChanged || []),
+		[submitOnChanged],
+	);
+
 	return (
 		<form
 			{...props}
@@ -28,7 +34,14 @@ export function EnhancedForm(
 				if (props.onChange) {
 					props.onChange(event);
 				}
-				if (event.defaultPrevented || typeof props.action !== "function") {
+				if (
+					!submitOnChanged ||
+					event.defaultPrevented ||
+					typeof props.action !== "function" ||
+					!event.target ||
+					!(event.target instanceof Element) ||
+					!submitOnChangedSet.has(event.target.getAttribute("name") || "")
+				) {
 					return;
 				}
 

@@ -46,7 +46,6 @@ export async function login(this: ThisAction, formData: FormData) {
 	);
 
 	if (!parsed.success) {
-		console.log(parsed.issues);
 		return <p className="mb-4 text-red-500">Invalid request</p>;
 	}
 

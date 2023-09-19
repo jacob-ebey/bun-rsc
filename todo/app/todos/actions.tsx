@@ -97,7 +97,6 @@ export async function editTodo(this: ThisAction, formData: FormData) {
 		throwRedirect(loginPathname);
 	}
 
-	console.log(Object.fromEntries(formData.entries()));
 	const parsed = v.safeParse(
 		editSchema,
 		Object.fromEntries(formData.entries()),
