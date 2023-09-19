@@ -17,7 +17,7 @@ export async function discoverRoutes(importURL: string, appDir: string) {
 	return routes;
 }
 
-const routeRegex = /(layout|loading|not\-found|page|problem|route)\.[tj]sx?$/;
+const routeRegex = /(_layout|_loading|_not\-found|_page|_problem|_route)\.[tj]sx?$/;
 const routeFileExtensions = [".js", ".ts", ".jsx", ".tsx"];
 async function discoverRoutesRecursive(
 	dir: string,

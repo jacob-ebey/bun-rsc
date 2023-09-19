@@ -164,17 +164,17 @@ function createRouting(
 		const moduleURL = getImportURL(bundleInfo.routes[routeID]);
 		const importRoute = () => dynamicImport.dynamicImport(moduleURL);
 		const withoutExt = routeID.split("/").slice(-1)[0];
-		if (withoutExt === "layout") {
+		if (withoutExt === "_layout") {
 			current.layout = importRoute;
-		} else if (withoutExt === "loading") {
+		} else if (withoutExt === "_loading") {
 			current.loading = importRoute;
-		} else if (withoutExt === "not-found") {
+		} else if (withoutExt === "_not-found") {
 			current.notFound = importRoute;
-		} else if (withoutExt === "page") {
+		} else if (withoutExt === "_page") {
 			current.page = importRoute;
-		} else if (withoutExt === "problem") {
+		} else if (withoutExt === "_problem") {
 			current.problem = importRoute;
-		} else if (withoutExt === "route") {
+		} else if (withoutExt === "_route") {
 			current.route = importRoute;
 		} else {
 			throw new Error(`Unknown route type: ${withoutExt}`);
