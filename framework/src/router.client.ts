@@ -106,6 +106,16 @@ export function ClientRouter({
 		}
 	}, [rscPayloadToUse]);
 
+	React.useEffect(() => {
+		if (lastPayload === initialRSCPayload) {
+			return;
+		}
+		const event = new CustomEvent("rsctransitionend", {
+			detail: lastPayload,
+		});
+		window.dispatchEvent(event);
+	}, [rscPayloadToUse]);
+
 	const navigation = React.useMemo<Navigation>(() => {
 		let navigation: Navigation = { state: "idle" };
 		if (transitioning && transition) {
