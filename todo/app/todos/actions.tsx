@@ -5,7 +5,7 @@ import * as v from "valibot";
 
 import * as models from "../../models/mod.ts";
 import { FormErrors } from "../components.tsx";
-import { loginPathname } from "../config.ts";
+import { loginPathname } from "../../config.js";
 import { getUser } from "../utils.ts";
 
 const FormDataCheckboxSchema = v.transform(v.string(), (s) => s === "on");

@@ -6,7 +6,7 @@ import * as models from "../../models/mod.ts";
 import { EnhancedForm } from "../client.tsx";
 import { Pending } from "../client.tsx";
 import { Checkbox, Input, Submit } from "../components.tsx";
-import { loginPathname } from "../config.ts";
+import { loginPathname } from "../../config.js";
 import { getUser } from "../utils.ts";
 import { addTodo, deleteTodo, editTodo } from "./actions.tsx";
 

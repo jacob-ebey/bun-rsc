@@ -2,6 +2,11 @@ export const cookiePath = "/";
 export const loginPathname = "/";
 export const loginSuccessRedirect = "/todos";
 
-export function href(path: string) {
+/**
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+export function href(path) {
 	return `${cookiePath}/${path}`;
 }

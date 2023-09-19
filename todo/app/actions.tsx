@@ -7,7 +7,7 @@ import { type ThisAction, crypto, throwRedirect } from "framework";
 
 import * as models from "../models/mod.ts";
 import { FormErrors } from "./components.tsx";
-import { cookiePath, loginSuccessRedirect } from "./config.ts";
+import { cookiePath, loginSuccessRedirect } from "../config.js";
 import { type User, getSecret } from "./utils.ts";
 
 export function logout(this: ThisAction) {
